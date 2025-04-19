@@ -36,7 +36,7 @@ void set_pmu_flag(void) { pmu_flag = true; }
 
 HardwareSerial Serial1(PA10, PA9);
 
-uint8_t write_buffer[10];
+uint8_t write_buffer[10] = {0};
 uint8_t write_buffer_len = 0;
 
 uint8_t io_matrix[9];//for IO matrix,last bytye is the restore key(c64 only)
@@ -180,7 +180,13 @@ void receiveEvent(int howMany) {
 }
 
 //-this is after receiveEvent-------------------------------
-void requestEvent() { Wire.write(write_buffer,write_buffer_len ); }
+void requestEvent() {
+  if (write_buffer_len > 0 && write_buffer_len <= sizeof(write_buffer)) {
+    Wire.write(write_buffer,write_buffer_len );
+  } else {
+    Wire.write((uint8_t)0); // Send something minimal to avoid stalling
+  }
+}
 
 void report_bat(){
  if (PMU.isBatteryConnect()) {
