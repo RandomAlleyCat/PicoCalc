@@ -202,9 +202,25 @@ void pwm_interrupt_handler() {
         //
     }
 }
+void test_battery(){
+    char buf[64];
+    int bat_pcnt = read_battery();
+    bat_pcnt = bat_pcnt>>8;
+    int bat_charging = bitRead(bat_pcnt,7);
+    bitClear(bat_pcnt,7);
+    sprintf(buf,"battery percent is %d\n",bat_pcnt);
+    printf("%s", buf);
+    lcd_print_string(buf);
+    if(bat_charging ==0 ){
+        sprintf(buf,"battery is not charging\n");
+    }else{
+        sprintf(buf,"battery is charging\n");
+    }
+    printf("%s", buf);
+    lcd_print_string(buf);
+}
 
 int main() {
-    char buf[64];
     set_sys_clock_khz(133000, true);
     stdio_init_all();
 
@@ -235,18 +251,13 @@ int main() {
     // otherwise we won't get working battery infos
 
     sleep_ms(2000);
-    int bat_pcnt = read_battery();
-
-    sprintf(buf,"battery percent is %d\n",bat_pcnt>>8);
-    printf(buf);
-    lcd_print_string(buf);
+    test_battery();
     while (1) {
-
         int c = lcd_getc(0);
         if(c != -1 && c > 0) {
             lcd_putc(0,c);
         }
-        sleep_ms(10);
+        sleep_ms(20);
     }
 }
 

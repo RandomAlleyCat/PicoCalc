@@ -17,4 +17,6 @@ void init_i2c_kbd();
 int read_i2c_kbd();
 int read_battery();
 
+#define bitRead(value, bit) (((value) >> (bit)) & 0x01)
+#define bitClear(value, bit) ((value) &= ~(1 << (bit)))
 #endif
