@@ -186,6 +186,7 @@ void requestEvent() {
   }
 }
 
+//depricated https://github.com/clockworkpi/PicoCalc/issues/20
 void report_bat(){
  if (PMU.isBatteryConnect()) {
     write_buffer[0] = REG_ID_BAT;
@@ -294,14 +295,15 @@ void check_pmu_int() {
     // set the threshold through getLowBatWarnThreshold( 5% ~ 20% )
     if (PMU.isDropWarningLevel2Irq()) {
       Serial1.println("isDropWarningLevel2");
-      report_bat();
+      //report_bat();
     }
 
     // When the set low-voltage battery percentage shutdown threshold is reached
     // set the threshold through setLowBatShutdownThreshold()  
     //This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
     if (PMU.isDropWarningLevel1Irq()) {
-      report_bat();
+      Serial1.println("isDropWarningLevel1");
+      //report_bat();
       //
       PMU.shutdown();
     }
