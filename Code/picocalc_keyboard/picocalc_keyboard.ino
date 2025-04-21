@@ -19,7 +19,6 @@
 TwoWire Wire2 = TwoWire(CONFIG_PMU_SDA, CONFIG_PMU_SCL);
 bool pmu_flag = 0;
 bool pmu_online = 0;
-uint8_t pmu_status = 0;
 uint8_t keycb_start = 0;
 
 uint8_t head_phone_status=LOW;
@@ -42,7 +41,6 @@ uint8_t write_buffer_len = 0;
 uint8_t io_matrix[9];//for IO matrix,last bytye is the restore key(c64 only)
 uint8_t js_bits=0xff;// c64 joystick bits
 
-static int current_bat_pcnt = 0;
 
 unsigned long time_uptime_ms() { return millis(); }
 
@@ -151,7 +149,7 @@ void receiveEvent(int howMany) {
     case REG_ID_BAT:{
       //Serial1.print("REG_ID_BAT getBatteryPercent:");Serial1.print(current_bat_pcnt);Serial1.println("%");
       write_buffer[0] = reg;
-      write_buffer[1] = (uint8_t)current_bat_pcnt;
+      write_buffer[1] = reg_get_value(REG_ID_BAT);
       
     }break;
     case REG_ID_KEY: {
@@ -247,6 +245,20 @@ void printPMU() {
   Serial1.println();
 }
 
+void sync_bat(){
+  int pcnt;
+  pcnt = PMU.getBatteryPercent();
+    //Serial1.print("check_pmu_int:  ");Serial1.print(pcnt);Serial1.println();
+  if (pcnt < 0) {  // disconnect
+    pcnt = 0;
+  } else {  // battery connected
+    if (PMU.isCharging()) {
+      bitSet(pcnt, 7);
+    }
+  }
+  reg_set_value(REG_ID_BAT,pcnt);
+}
+
 void check_pmu_int() {
   int pcnt;
 
@@ -258,17 +270,13 @@ void check_pmu_int() {
     //Serial1.print("check_pmu_int:  ");Serial1.print(pcnt);Serial1.println();
     if (pcnt < 0) {  // disconnect
       pcnt = 0;
-      pmu_status = 0xff;
-      current_bat_pcnt = pcnt;
     } else {  // battery connected
-      current_bat_pcnt = pcnt;
       if (PMU.isCharging()) {
-        pmu_status = bitSet(pcnt, 7);
-      } else {
-        pmu_status = pcnt;
+        bitSet(pcnt, 7);
       }
       low_bat();
     }
+    reg_set_value(REG_ID_BAT,pcnt);
   }
 
   if (pmu_flag) {
@@ -320,16 +328,14 @@ void check_pmu_int() {
       pcnt = PMU.getBatteryPercent();
       if (pcnt < 0) {  // disconnect
         pcnt = 0;
-        pmu_status = 0xff;
-      } else {
-        pmu_status = pcnt;
+      }else{
+        bitSet(pcnt,7);
       }
-      current_bat_pcnt = pcnt;
+      reg_set_value(REG_ID_BAT,pcnt);
       Serial1.println("isBatInsert");
     }
     if (PMU.isBatRemoveIrq()) {
-      pmu_status = 0xff;
-      current_bat_pcnt = 0;
+      reg_set_value(REG_ID_BAT,0);
       Serial1.println("isBatRemove");
       stop_chg();
     }
@@ -378,10 +384,10 @@ void check_pmu_int() {
       pcnt = PMU.getBatteryPercent();
       if (pcnt < 0) {  // disconnect
         pcnt = 0;
-        pmu_status = 0xff;
+      }else{
+        bitSet(pcnt, 7);
       }
-      current_bat_pcnt = pcnt;
-      pmu_status = bitClear(pcnt, 7);
+      reg_set_value(REG_ID_BAT,pcnt);
       Serial1.println("isBatChagerDone");
       stop_chg();
     }
@@ -389,10 +395,10 @@ void check_pmu_int() {
       pcnt = PMU.getBatteryPercent();
       if (pcnt < 0) {  // disconnect
         pcnt = 0;
-        pmu_status = 0xff;
+      }else{
+        bitSet(pcnt, 7);
       }
-      current_bat_pcnt = pcnt;
-      pmu_status = bitSet(pcnt, 7);
+      reg_set_value(REG_ID_BAT,pcnt);
       Serial1.println("isBatChagerStart");
       if(PMU.isBatteryConnect()) {
         start_chg();
@@ -410,8 +416,6 @@ void check_pmu_int() {
     // Clear PMU Interrupt Status Register
     PMU.clearIrqStatus();
   }
-
-  reg_set_value(REG_ID_BAT, (uint8_t)pmu_status);
 }
 
 /*
@@ -545,6 +549,7 @@ void setup() {
   
   run_time = 0;
   keycb_start = 1;
+  sync_bat();
   low_bat();
   //printf("Start pico");
 }

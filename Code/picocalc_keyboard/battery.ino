@@ -1,5 +1,6 @@
 #include "battery.h"
 
+static unsigned int low_bat_count =0;
 
 void indicator_led_on(){
     digitalWrite(PC13, LOW);
@@ -43,23 +44,23 @@ void show_bat_segs(){
 }
 
 void low_bat(){
-  if(PMU.isBatteryConnect() && !PMU.isCharging()){
-    int pcnt = PMU.getBatteryPercent();
-     if(pcnt <= LOW_BAT_VAL){
+  int pcnt = PMU.getBatteryPercent();
+  if(pcnt >=0 && pcnt <= LOW_BAT_VAL){
+    low_bat_count++;
       //This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
-        indicator_led_off();      
-        if(pcnt <= 1) {//This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
-          PMU.setChargingLedMode(XPOWERS_CHG_LED_BLINK_4HZ);
-          if(pcnt==0){//This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
-            PMU.shutdown();//This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
-          }
-        }else{
-          PMU.setChargingLedMode(XPOWERS_CHG_LED_ON);
-        }
-     }else{
-        indicator_led_on();
-        PMU.setChargingLedMode(XPOWERS_CHG_LED_OFF);
-     }
+    indicator_led_off();      
+    if(pcnt <= 1) {//This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
+      PMU.setChargingLedMode(XPOWERS_CHG_LED_BLINK_4HZ);
+      if(pcnt==0 && low_bat_count >= 4 ) {//This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
+        PMU.shutdown();//This is related to the battery charging and discharging logic. If you're not sure what you're doing, please don't modify it, as it could damage the battery.
+      }
+    }else{
+      PMU.setChargingLedMode(XPOWERS_CHG_LED_ON);
+    }
+  }else{
+    low_bat_count = 0;
+    indicator_led_on();
+    PMU.setChargingLedMode(XPOWERS_CHG_LED_OFF);
   }
 }
 
