@@ -220,6 +220,16 @@ void test_battery(){
     lcd_print_string(buf);
 }
 
+void test_kbd_backlight(uint8_t val) {
+    char buf[64];
+    int kbd_backlight = set_kbd_backlight(val);
+    kbd_backlight = kbd_backlight>>8;
+
+    sprintf(buf, "kbd backlight %d\n", kbd_backlight);
+    printf("%s", buf);
+    lcd_print_string(buf);
+}
+
 int main() {
     set_sys_clock_khz(133000, true);
     stdio_init_all();
@@ -252,6 +262,13 @@ int main() {
 
     sleep_ms(2000);
     test_battery();
+    test_kbd_backlight(50);
+    sleep_ms(1000);
+    test_kbd_backlight(100);
+    sleep_ms(1000);
+    test_kbd_backlight(255);
+    sleep_ms(1000);
+    test_kbd_backlight(0);
     while (1) {
         int c = lcd_getc(0);
         if(c != -1 && c > 0) {
