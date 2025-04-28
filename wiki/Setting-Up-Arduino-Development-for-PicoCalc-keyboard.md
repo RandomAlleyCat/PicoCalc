@@ -137,7 +137,7 @@ Also if We want extract firmware from keyboard,here is the steps:
 
 here is sample correct extracting logs from linux :  
 ```
-$ sudo stm32flash -r PicoCalc_firmware_v1.1.bin -S 0x08000000:65536 /dev/ttyUSB0
+$ sudo stm32flash -r PicoCalc_kbd_firmware_v1.1.bin -S 0x08000000:65536 /dev/ttyUSB0
 stm32flash 0.7
 
 http://stm32flash.sourceforge.net/
@@ -154,6 +154,42 @@ Device ID    : 0x0410 (STM32F10xxx Medium-density)
 Memory read
 Read address 0x08010000 (100.00%) Done.
 ```
+
+### Write firmware bin file back to the keyboard
+
+```
+sudo stm32flash -w PicoCalc_kbd_firmware_v1.1.bin -v -S 0x08000000 /dev/ttyUSB0
+```
+
+sample writing back log: 
+```
+stm32flash 0.7
+
+http://stm32flash.sourceforge.net/
+
+Using Parser : Raw BINARY
+Location     : 0x8000000
+Size         : 65536
+Interface serial_posix: 57600 8E1
+Version      : 0x22
+Option 1     : 0x00
+Option 2     : 0x00
+Device ID    : 0x0410 (STM32F10xxx Medium-density)
+- RAM        : Up to 20KiB  (512b reserved by bootloader)
+- Flash      : Up to 128KiB (size first sector: 4x1024)
+- Option RAM : 16b
+- System RAM : 2KiB
+Write to memory
+Erasing memory
+Wrote and verified address 0x08010000 (100.00%) Done.
+```
+
+### Convert firmware bin to intel hex format
+```
+srec_cat PicoCalc_kbd_firmware_v1.1.bin  -Binary -offset 0x08000000 -output PicoCalc_kbd_firmware_v1.1.hex -Intel
+```
+
+
 
 
 
