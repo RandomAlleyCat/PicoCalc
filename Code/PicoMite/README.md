@@ -7,6 +7,8 @@ All the operations in this document are performed in a Linux environment. A basi
 git clone https://github.com/cuu/PicoMite.git
 cd PicoMite
 
+git reset --hard 7df3396dd3a1070a5459af3a04df808389bfdef8
+
 git clone  https://github.com/clockworkpi/PicoCalc.git #get patch code
 git apply PicoCalc/Code/PicoMite/PicoMite.patch
 
