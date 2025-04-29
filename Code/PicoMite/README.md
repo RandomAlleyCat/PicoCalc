@@ -11,6 +11,7 @@ git reset --hard 7df3396dd3a1070a5459af3a04df808389bfdef8
 
 git clone  https://github.com/clockworkpi/PicoCalc.git #get patch code
 git apply PicoCalc/Code/PicoMite/PicoMite.patch
+git apply PicoCalc/Code/PicoMite/PicoMite_002.patch
 
 export PICO_SDK_PATH=/to/where/your/pico/sdk/is
 mkdir build
