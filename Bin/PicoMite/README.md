@@ -2,8 +2,8 @@
 
 Here are pre-compiled uf2 files of PicoMite(MMBasic) for PicoCalc
 
-- PicoMite_PICORP2350_V6.00.02RC17_b.uf2  for Pico2
-- PicoMite_PICO_V6.00.02RC17_b.uf2  for Pico1
+- PicoMite_PICORP2350_V6.00.02xxxx.uf2  for Pico2
+- PicoMite_PICO_V6.00.xxxxx.uf2  for Pico1
 
 
 Original source:
