@@ -13,6 +13,3 @@
 [submodule "Bin/MicroPython/PicoCalc-micropython-driver"]
 	path = Bin/MicroPython/PicoCalc-micropython-driver
 	url = https://github.com/zenodante/PicoCalc-micropython-driver.git
-[submodule "Bin/PicoMite/PicoMiteAllVersions"]
-	path = Bin/PicoMite/PicoMiteAllVersions
-	url = https://github.com/madcock/PicoMiteAllVersions.git
