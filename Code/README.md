@@ -8,7 +8,7 @@ We would like to thank the following open source projects:
 [PicoMite](https://geoffg.net/picomite.html) is a [BASIC](https://en.m.wikipedia.org/wiki/BASIC) language interpreter based on the PRI Pico optimized version of [MMBasic](https://mmbasic.com/).
 
 - FUZIX  
-[FUXIX](https://www.fuzix.org/)  is a lightweight UNIX-like OS for 8-bit and small systems, designed for minimal resource usage.
+[FUZIX](https://www.fuzix.org/)  is a lightweight UNIX-like OS for 8-bit and small systems, designed for minimal resource usage.
 
 - NES emulator  
 [shapones](https://github.com/shapoco/shapones) is an NES emulator for programming study on pico.
