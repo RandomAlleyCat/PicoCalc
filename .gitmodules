@@ -16,3 +16,6 @@
 [submodule "Bin/PicoMite/PicoMiteAllVersions"]
 	path = Bin/PicoMite/PicoMiteAllVersions
 	url = https://github.com/madcock/PicoMiteAllVersions.git
+[submodule "Code/pico_multi_booter/sd_boot/lib/pico-vfs"]
+	path = Code/pico_multi_booter/sd_boot/lib/pico-vfs
+	url = https://github.com/oyama/pico-vfs.git
