@@ -72,19 +72,19 @@ add_custom_target(BUILT_${BOOT}
 
 add_dependencies(BUILT_boot boot)
 
-add_dependencies(PREPARE_picomite BUILT_boot)
-add_dependencies(picomite PREPARE_picomite)
-add_dependencies(BUILT_picomite picomite)
-
-add_dependencies(PREPARE_sd_boot BUILT_picomite)
+add_dependencies(PREPARE_sd_boot BUILT_boot)
 add_dependencies(sd_boot PREPARE_sd_boot)
 add_dependencies(BUILT_sd_boot sd_boot)
+
+add_dependencies(PREPARE_picomite BUILT_sd_boot)
+add_dependencies(picomite PREPARE_picomite)
+add_dependencies(BUILT_picomite picomite)
 
 
 # ***************************************************************************
 # *     Join the BOOT and all APP '.uf2' files together                     *
 # ***************************************************************************
-set(UF2S boot.uf2 picomite.uf2 sd_boot.uf2)
+set(UF2S boot.uf2 sd_boot.uf2 picomite.uf2)
 
 add_custom_target(JOIN
     COMMENT "Combine the '.uf2' files"
@@ -95,7 +95,7 @@ add_custom_target(JOIN
             ${UF2S}
 )
 
-add_dependencies(JOIN BUILT_sd_boot)
+add_dependencies(JOIN BUILT_picomite)
 
 add_custom_target(${PROJECT} ALL DEPENDS JOIN)
 

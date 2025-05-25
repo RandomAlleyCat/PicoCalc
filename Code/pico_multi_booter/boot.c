@@ -150,6 +150,7 @@ int main(void) {
         printf("max %d \n",max);
 
         // Choose an app to launch
+		/*
         int chosen;
 		if(!sd_card_inserted()){
 		  printf("No sd card\n");
@@ -159,7 +160,8 @@ int main(void) {
 		  chosen = max-1;
 		  if(chosen <0 ) chosen = 0;
 		}		
-
+		*/
+		int chosen = 0;
         // Get start address of app
         addr = PEEK32( info + ((chosen * 16)));
         printf("Application at %08lX\n",  addr);

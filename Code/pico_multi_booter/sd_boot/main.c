@@ -207,15 +207,18 @@ int load_firmware_by_path(const char *path)
 
     // Attempt to load the application from the SD card
     // bool load_success = load_program(FIRMWARE_PATH);
-    bool load_success = load_program(path);
+    bool load_success=false;
 
     // Get the pointer to the application flash area
     uint32_t *app_location = (uint32_t *)(XIP_BASE + SD_BOOT_FLASH_OFFSET);
-
     // Check if there is an already valid application in flash
     bool has_valid_app = is_valid_application(app_location);
 
-
+    if(path == NULL) {
+        load_success = true;
+    }else{
+        load_success = load_program(path);
+    }
 
     if (load_success || has_valid_app)
     {
@@ -245,11 +248,21 @@ int load_firmware_by_path(const char *path)
 
 void final_selection_callback(const char *path)
 {
+    char status_message[128];
+    const char *extension = ".bin"; 
+    if(path == NULL) {
+        //load default app from flash
+
+        snprintf(status_message, sizeof(status_message), "SEL: %s", "FLASH+152k");
+        text_directory_ui_set_status(status_message);
+        sleep_ms(200);
+        load_firmware_by_path(path);
+        return;
+    }
     // Trigger firmware loading with the selected path
     DEBUG_PRINT("selected: %s\n", path);
 
-    char status_message[128];
-    const char *extension = ".bin";
+
     size_t path_len = strlen(path);
     size_t ext_len = strlen(extension);
 
@@ -286,7 +299,6 @@ int main()
     keypad_init();
     lcd_init();
     lcd_clear();
-    text_directory_ui_init();
     
     // Check for SD card presence
     DEBUG_PRINT("Checking for SD card...\n");

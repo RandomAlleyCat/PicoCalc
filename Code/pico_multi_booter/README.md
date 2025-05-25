@@ -3,8 +3,8 @@
 Here is a bootloader for PicoCalc combined slightly modified [PicoMite](https://github.com/madcock/PicoMiteAllVersions) and [SD boot](https://github.com/adwuard/Picocalc_SD_Boot)   
 
 - Pico1 
-- No sdcard inserted ,PicoMite will show up.  
-- Sdcard inserted, SD boot menu will show up, load third pico app bin to run at FLASH TARGET OFFSET 2048k-940k  
+- No sdcard inserted,load default app to run from flash. 
+- Sdcard inserted, SD boot menu will show up, load third pico app bin to run at FLASH TARGET OFFSET 2048k-152k
 
 ## How to compile
 ```
@@ -29,13 +29,13 @@ configuration.h
 
 config.h
 ```
-#define SD_BOOT_FLASH_OFFSET         (940 * 1024)
+#define SD_BOOT_FLASH_OFFSET         (152 * 1024)
 ```
 
 ### SD Card Application Build and Deployment
 **Important Note:**   
 ```
-Applications intended for SD card boot "MUST REBUILD" using a custom linker script to accommodate the program's offset(940k) address.
+Applications intended for SD card boot "MUST REBUILD" using a custom linker script to accommodate the program's offset(152k) address.
 
 Applications intended for SD card boot is in **bin** format, not uf2.
  
@@ -81,7 +81,7 @@ make
 ```
 
 #### Step 3 Your Custom Application Is Ready For SD Card Boot 
-Once the build is complete, copy the generated `.bin` file to the `/sd` directory of the SD card.  
+Once the build is complete, copy the generated `.bin` file to the `/firmware` directory of the SD card.  
 
 
 
