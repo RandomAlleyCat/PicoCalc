@@ -85,9 +85,8 @@ static uint32_t last_scrolling = 0; // for text scrolling in selected entry
 // Forward declarations
 static void ui_refresh(void);
 static void load_directory(const char *path);
-static void process_key_event(int key);
 static void ui_draw_title(void);
-static void ui_draw_path_header(void);
+static void ui_draw_path_header(uint8_t);
 static void ui_draw_directory_list(void);
 static void ui_draw_directory_entry(int entry_idx, int posY, int font_height, int is_selected);
 static void ui_update_selected_entry(void);
@@ -115,7 +114,10 @@ static void draw_text(int x, int y, const char *text, int foreground, int backgr
  */
 static void format_file_size(off_t size, int is_dir, char *buf, size_t buf_size)
 {
-    if (is_dir == IS_DIR)
+    if(is_dir == IS_LAST_APP){
+        snprintf(buf, buf_size, "");
+    }
+    else if (is_dir == IS_DIR)
     {
         snprintf(buf, buf_size, "DIR");
     }
@@ -133,6 +135,13 @@ static void format_file_size(off_t size, int is_dir, char *buf, size_t buf_size)
     }
 }
 
+static void set_default_entry(){
+    entry_count = 0;
+    strncpy(entries[entry_count].name, "[Default app]", sizeof(entries[entry_count].name) - 1);
+    entries[entry_count].name[sizeof(entries[entry_count].name) - 1] = '\0';
+    entries[entry_count].is_dir = IS_LAST_APP;
+    entries[entry_count].file_size = 0; 
+}
 /**
  * Create scrolling text for long filenames
  * Creates a continuous scroll effect for text that exceeds visible area
@@ -170,11 +179,7 @@ static void load_directory(const char *path)
         entry_count = 0;
         return;
     }
-    entry_count = 0;
-    strncpy(entries[entry_count].name, "[Last app]", sizeof(entries[entry_count].name) - 1);
-    entries[entry_count].name[sizeof(entries[entry_count].name) - 1] = '\0';
-    entries[0].is_dir = IS_LAST_APP;
-    entries[0].file_size = 0;
+    set_default_entry();
 
     entry_count = 1;
     struct dirent *ent;
@@ -232,7 +237,7 @@ static void load_directory(const char *path)
 static void ui_draw_title(void)
 {
     draw_rect_spi(UI_X, UI_Y, UI_X + UI_WIDTH - 1, UI_Y + HEADER_TITLE_HEIGHT, BLACK);
-    draw_text(UI_X + 2, UI_Y + 2, "PicoCalc SD Firmware Loader", WHITE, BLACK);
+    draw_text(UI_X + 2, UI_Y + 2, "PicoCalc Bootloader v1.0", WHITE, BLACK);
 }
 
 static void ui_draw_empty_tip(){
@@ -248,20 +253,20 @@ static void ui_draw_empty_tip(){
     draw_text(UI_X + 2, y + 12+2, "Please copy .bin files to the" , COLOR_FG, COLOR_BG);
     draw_text(UI_X + 2, y + 24+2, "\"firmware\" folder" , COLOR_FG, COLOR_BG);
 
-
-    strncpy(entries[entry_count].name, "Load default", sizeof(entries[entry_count].name) - 1);
-    entries[entry_count].name[sizeof(entries[entry_count].name) - 1] = '\0';
-    entries[0].is_dir = IS_LAST_APP;
-    entries[0].file_size = 0;
+    set_default_entry();
     // Draw the entry using the helper function
     ui_draw_directory_entry(0, y_start, 12, 1);
 }
 
 // Draw the current path header
-static void ui_draw_path_header(void)
+static void ui_draw_path_header(uint8_t nosd)
 {
     char path_header[300];
-    snprintf(path_header, sizeof(path_header), "Path: %s", current_path);
+	if(nosd) {
+	  snprintf(path_header, sizeof(path_header), "SD card not found");
+	}else{
+	  snprintf(path_header, sizeof(path_header), "Path: SD%s", current_path);
+	}
     int y = UI_Y + HEADER_TITLE_HEIGHT;
     draw_rect_spi(UI_X, y, UI_X + UI_WIDTH - 1, y + PATH_HEADER_HEIGHT - 1, COLOR_BG);
     draw_text(UI_X + 2, y + 2, path_header, COLOR_FG, COLOR_BG);
@@ -320,8 +325,8 @@ static void ui_draw_directory_entry(int entry_idx, int posY, int font_height, in
                     size_buffer, sizeof(size_buffer));
     
     // Draw filename and file size
-    draw_text(FILE_NAME_X, posY, display_buffer, is_selected?COLOR_BG:COLOR_FG , is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
-    draw_text(FILE_SIZE_X, posY, size_buffer, is_selected?COLOR_BG:COLOR_FG, is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
+    draw_text(FILE_NAME_X, posY, display_buffer, COLOR_FG , is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
+    draw_text(FILE_SIZE_X, posY, size_buffer, COLOR_FG, is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
 }
 
 /**
@@ -349,6 +354,20 @@ static void ui_update_selected_entry(void)
         // Redraw just the selected entry
         ui_draw_directory_entry(selected_index, posY, font_height, 1);
     }
+}
+
+static void ui_clear_directory_list(void){
+    if(entry_count <1 ) return;
+
+    for(int i=1;i<entry_count;i++){
+        strncpy(entries[entry_count].name, "", sizeof(entries[entry_count].name) - 1);
+        entries[entry_count].name[sizeof(entries[entry_count].name) - 1] = '\0';
+        entries[entry_count].is_dir = 0;
+        entries[entry_count].file_size = 0;
+    }
+
+    entry_count = 1;
+    selected_index = 0;
 }
 
 // Draw the directory list
@@ -392,7 +411,7 @@ static void ui_draw_status_bar(void)
 static void ui_refresh(void)
 {
     ui_draw_title();
-    ui_draw_path_header();
+    ui_draw_path_header(0);
     ui_draw_directory_list();
     ui_draw_status_bar();
 	if(entry_count == 0) {
@@ -402,7 +421,7 @@ static void ui_refresh(void)
 }
 
 // Handle key events for navigation and selection
-static void process_key_event(int key)
+void process_key_event(int key)
 {
     switch (key)
     {
@@ -431,7 +450,7 @@ static void process_key_event(int key)
                 snprintf(new_path, sizeof(new_path), "%s/%s", current_path, entries[selected_index].name);
                 strncpy(current_path, new_path, sizeof(current_path) - 1);
                 load_directory(current_path);
-                ui_draw_path_header();
+                ui_draw_path_header(0);
                 ui_draw_directory_list();
             }else if(entries[selected_index].is_dir == IS_LAST_APP){
                 if(final_callback){
@@ -455,7 +474,7 @@ static void process_key_event(int key)
             if (current_path[0] == '\0')
                 strncpy(current_path, "/firmware", sizeof(current_path) - 1);
             load_directory(current_path);
-            ui_draw_path_header();
+            ui_draw_path_header(0);
             ui_draw_directory_list();
         }
         break;
@@ -469,6 +488,15 @@ static void process_key_event(int key)
 void text_directory_ui_set_final_callback(final_selection_callback_t callback)
 {
     final_callback = callback;
+}
+
+bool text_directory_ui_pre_init(void)
+{
+    draw_filled_rect(UI_X, UI_Y, UI_WIDTH, UI_HEIGHT, COLOR_BG);
+    ui_draw_title();
+    ui_draw_path_header(0);
+    ui_draw_directory_list();
+    ui_draw_status_bar();
 }
 
 // Public API: Initialize the UI
@@ -489,6 +517,18 @@ void text_directory_ui_set_status(const char *msg)
     strncpy(status_message, msg, sizeof(status_message) - 1);
     status_message[sizeof(status_message) - 1] = '\0';
     ui_draw_status_bar();
+}
+
+void text_directory_ui_update_header(uint8_t nosd) {
+    ui_draw_path_header(nosd);
+}
+
+void text_directory_ui_draw_default_app() {
+    int y_start = UI_Y + HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT;
+
+    set_default_entry();
+    // Draw the entry using the helper function
+    ui_draw_directory_entry(0, y_start, 12, 1);
 }
 
 // Public API: Main event loop for the UI
@@ -519,11 +559,17 @@ void text_directory_ui_run(void)
 
         // Check for SD card removal during runtime
         if (!sd_card_inserted()) {
-            text_directory_ui_set_status("SD card removed. Please reinsert card.");
-            
+            text_directory_ui_set_status("SD card removed. Please reinsert.");
+			ui_draw_path_header(1); 
+            ui_clear_directory_list();
+            ui_draw_directory_list();
             // Wait until the SD card is reinserted
             while (!sd_card_inserted()) {
-                sleep_ms(100);
+                key = keypad_get_key();
+                if (key != 0)
+                    process_key_event(key);
+
+                sleep_ms(20);
             }
             
             // Once reinserted, update the UI and reinitialize filesystem
@@ -536,7 +582,7 @@ void text_directory_ui_run(void)
             
             // Refresh the directory listing
             load_directory(current_path);
-            ui_draw_path_header();
+            ui_draw_path_header(0);
             ui_draw_directory_list();
             text_directory_ui_set_status("SD card remounted successfully.");
         }

@@ -203,7 +203,7 @@ static bool is_valid_application(uint32_t *app_location)
 
 int load_firmware_by_path(const char *path)
 {
-    text_directory_ui_set_status("STAT: loading app...");
+    text_directory_ui_set_status("STAT: Flashing firmware...");
 
     // Attempt to load the application from the SD card
     // bool load_success = load_program(FIRMWARE_PATH);
@@ -222,7 +222,7 @@ int load_firmware_by_path(const char *path)
 
     if (load_success || has_valid_app)
     {
-        text_directory_ui_set_status("STAT: launching app...");
+        text_directory_ui_set_status("STAT: Launching app...");
         DEBUG_PRINT("launching app\n");
         // Small delay to allow printf to complete
         sleep_ms(100);
@@ -299,18 +299,25 @@ int main()
     keypad_init();
     lcd_init();
     lcd_clear();
-    
+	text_directory_ui_pre_init();
+ 
     // Check for SD card presence
     DEBUG_PRINT("Checking for SD card...\n");
     if (!sd_card_inserted())
     {
         DEBUG_PRINT("SD card not detected\n");
-        text_directory_ui_set_status("SD card not detected. \nPlease insert SD card.");
-        
+        text_directory_ui_set_status("SD card not detected.");
+		text_directory_ui_update_header(1);
         // Poll until SD card is inserted
+        text_directory_ui_draw_default_app();
+        text_directory_ui_set_final_callback(final_selection_callback);
         while (!sd_card_inserted())
         {
-            sleep_ms(100);
+            int key = keypad_get_key();
+            if (key != 0)
+                process_key_event(key);
+
+            sleep_ms(20);
         }
         
         // Card detected, wait for it to stabilize
