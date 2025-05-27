@@ -41,11 +41,12 @@ const uint LEDPIN = 25;
 #define VTOR_OFFSET M33_VTOR_OFFSET
 #define MAX_RAM 0x20080000
 #endif
-
+uint8_t status_flag;//0 no sdcard ,1 has sd card
 bool sd_card_inserted(void)
 {
+    status_flag = !gpio_get(SD_DET_PIN);
     // Active low detection - returns true when pin is low
-    return !gpio_get(SD_DET_PIN);
+    return (bool)status_flag;
 }
 
 bool fs_init(void)

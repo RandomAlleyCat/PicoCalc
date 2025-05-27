@@ -63,6 +63,8 @@ typedef struct
     char name[256];
     int is_dir; // 1 if directory, 0 if file 2 == last run
     off_t file_size; // Size of the file in bytes
+    uint16_t x;
+    uint16_t y;
 } dir_entry_t;
 
 // UI Layout Constants for file display
@@ -78,7 +80,14 @@ typedef struct
 static char current_path[512] = "/firmware";                   // Current directory path
 static dir_entry_t entries[MAX_ENTRIES];                 // Directory entries
 static int entry_count = 0;                              // Number of entries in the current directory
-static int selected_index = 0;                           // Currently selected entry index
+static uint8_t selected_index = 0;                           // Currently selected entry index
+static uint8_t  page_index = 0;
+static uint8_t last_selected_index = 0;
+static uint8_t last_page_index = 0;
+static uint8_t update_sel = 0;
+static uint8_t update_required=0;
+extern uint8_t status_flag;
+static uint8_t status_repeat=0;
 static char status_message[256] = "";                    // Status message
 static final_selection_callback_t final_callback = NULL; // Callback for file selection
 static uint32_t last_scrolling = 0; // for text scrolling in selected entry
@@ -88,8 +97,8 @@ static void load_directory(const char *path);
 static void ui_draw_title(void);
 static void ui_draw_path_header(uint8_t);
 static void ui_draw_directory_list(void);
-static void ui_draw_directory_entry(int entry_idx, int posY, int font_height, int is_selected);
-static void ui_update_selected_entry(void);
+static void ui_draw_directory_entry(int entry_idx);
+static void ui_update_selected_entry(uint8_t);
 static void ui_draw_status_bar(void);
 static void ui_draw_empty_tip(void);
 static void format_file_size(off_t size, int is_dir, char *buf, size_t buf_size);
@@ -255,7 +264,7 @@ static void ui_draw_empty_tip(){
 
     set_default_entry();
     // Draw the entry using the helper function
-    ui_draw_directory_entry(0, y_start, 12, 1);
+    ui_draw_directory_entry(0);
 }
 
 // Draw the current path header
@@ -281,12 +290,18 @@ static void ui_draw_path_header(uint8_t nosd)
  * @param font_height Height of the font
  * @param is_selected Whether this entry is currently selected
  */
-static void ui_draw_directory_entry(int entry_idx, int posY, int font_height, int is_selected)
+static void ui_draw_directory_entry(int entry_idx)
 {
+
+    int y_start = UI_Y + HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT;
+    int posY = y_start + (entry_idx%ITEMS_PER_PAGE) * (FONT_HEIGHT + ENTRY_PADDING);
+    int is_selected = (entry_idx == selected_index);
+    entries[entry_idx].x = FILE_NAME_X;
+    entries[entry_idx].y = posY;
     // Highlight background for selected item
     if (is_selected)
     {
-        draw_rect_spi(UI_X, posY - 1, UI_X + UI_WIDTH - 1, posY + font_height, COLOR_HIGHLIGHT);
+        draw_rect_spi(UI_X, posY - 1, UI_X + UI_WIDTH - 1, posY + FONT_HEIGHT, COLOR_HIGHLIGHT);
     }
     
     // Prepare filename with directory indicator
@@ -334,26 +349,16 @@ static void ui_draw_directory_entry(int entry_idx, int posY, int font_height, in
  * This is an optimization to avoid redrawing the entire directory list
  * when only the selected entry needs to be updated (e.g., for scrolling text)
  */
-static void ui_update_selected_entry(void)
+static void ui_update_selected_entry(uint8_t last)
 {
-    const int font_height = 12;
-    const int entry_padding = 2;
-    int y_start = UI_Y + HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT;
-    int available_height = UI_HEIGHT - (HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT + STATUS_BAR_HEIGHT);
-    int max_visible = available_height / (font_height + entry_padding);
-    int start_index = (selected_index >= max_visible) ? selected_index - max_visible + 1 : 0;
-    
-    // Calculate the position of the selected entry
-    int visible_index = selected_index - start_index;
-    if (visible_index >= 0 && visible_index < max_visible) {
-        int posY = y_start + visible_index * (font_height + entry_padding);
-        
-        // Clear just the selected row
-        //draw_rect_spi(UI_X, posY - 1, UI_X + UI_WIDTH - 1, posY + font_height, COLOR_BG);
-        
-        // Redraw just the selected entry
-        ui_draw_directory_entry(selected_index, posY, font_height, 1);
+    uint16_t y=0;
+    if(last) {
+        y = entries[last_selected_index % ITEMS_PER_PAGE].y;
+        draw_rect_spi(UI_X, y - 1, UI_X + UI_WIDTH - 1, y + FONT_HEIGHT, COLOR_BG);
+        ui_draw_directory_entry(last_selected_index);
     }
+    ui_draw_directory_entry(selected_index );
+
 }
 
 static void ui_clear_directory_list(void){
@@ -374,30 +379,40 @@ static void ui_clear_directory_list(void){
 static void ui_draw_directory_list(void)
 {
 	if(entry_count <=0 ) return;
-    const int font_height = 12;
-    const int entry_padding = 2;
+    page_index = (selected_index / ITEMS_PER_PAGE)* ITEMS_PER_PAGE;
+
     int y_start = UI_Y + HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT;
-    int available_height = UI_HEIGHT - (HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT + STATUS_BAR_HEIGHT);
-    int max_visible = available_height / (font_height + entry_padding);
-    int start_index = (selected_index >= max_visible) ? selected_index - max_visible + 1 : 0;
 
-    draw_rect_spi(UI_X, y_start, UI_X + UI_WIDTH - 1, UI_Y + UI_HEIGHT - STATUS_BAR_HEIGHT - 1, COLOR_BG);
-    last_scrolling = time_us_64() /1000;
-
-    for (int i = 0; i < max_visible && (i + start_index) < entry_count; i++)
-    {
-        int posY = y_start + i * (font_height + entry_padding);
-        int entry_idx = i + start_index;
-        int is_selected = (entry_idx == selected_index);
-        
-        // Draw the entry using the helper function
-        ui_draw_directory_entry(entry_idx, posY, font_height, is_selected);
+    if(page_index!= last_page_index){
+        draw_rect_spi(UI_X, y_start, UI_X + UI_WIDTH - 1, UI_Y + UI_HEIGHT - STATUS_BAR_HEIGHT - 1, COLOR_BG);
+        last_page_index = page_index;
+        update_required = 1;
+        update_sel = 0;
     }
+    last_scrolling = time_us_64() / 1000;
+    if(update_required) {
+
+        for (int i = page_index; i < page_index + ITEMS_PER_PAGE; i++) {
+            if (i >= entry_count) break;
+            // Draw the entry using the helper function
+            ui_draw_directory_entry(i);
+        }
+    }
+    if(update_sel)
+    {
+        printf("update selected entry\n");
+        ui_update_selected_entry(update_sel);
+        update_sel = 0;
+    }
+    update_required = 0;
 }
 
 // Draw the status bar
 static void ui_draw_status_bar(void)
 {
+    if(status_repeat > 1) {
+        return;
+    }
     int y = UI_Y + UI_HEIGHT - STATUS_BAR_HEIGHT;
     draw_rect_spi(UI_X, y, UI_X + UI_WIDTH - 1, UI_Y + UI_HEIGHT - 1, COLOR_BG);
     draw_line_spi(UI_X, y, UI_X + UI_WIDTH - 1, y, COLOR_FG);
@@ -405,6 +420,7 @@ static void ui_draw_status_bar(void)
     strncpy(truncated_message, status_message, sizeof(truncated_message) - 1);
     truncated_message[sizeof(truncated_message) - 1] = '\0';
     draw_text(UI_X + 2, y + 2, truncated_message, COLOR_FG, COLOR_BG);
+
 }
 
 // Refresh the entire UI
@@ -426,16 +442,30 @@ void process_key_event(int key)
     switch (key)
     {
     case KEY_ARROW_UP:
-        if (selected_index > 0)
-            selected_index--;
+        last_selected_index = selected_index;
+        if(selected_index == 0) {
+            selected_index = entry_count -1;
+        }else{
+            selected_index --;
+        }
+        update_sel = 1;
         ui_draw_directory_list();
-		text_directory_ui_set_status("");
+        if(status_flag) {
+            text_directory_ui_set_status("Up/Down to select,Enter to exec.");
+        }
         break;
     case KEY_ARROW_DOWN:
-        if (selected_index < entry_count - 1)
+        last_selected_index = selected_index;
+        if(selected_index == entry_count -1) {
+            selected_index = 0;
+        }else{
             selected_index++;
+        }
+        update_sel = 1;
         ui_draw_directory_list();
-		text_directory_ui_set_status("");
+        if(status_flag) {
+            text_directory_ui_set_status("Up/Down to select,Enter to exec.");
+        }
         break;
     case KEY_ENTER:
         if(entry_count == 0) {
@@ -502,6 +532,8 @@ bool text_directory_ui_pre_init(void)
 // Public API: Initialize the UI
 bool text_directory_ui_init(void)
 {
+    update_sel = 0;
+    update_required = 1;
     draw_filled_rect(UI_X, UI_Y, UI_WIDTH, UI_HEIGHT, COLOR_BG);
     strncpy(current_path, "/firmware", sizeof(current_path));
     load_directory(current_path);
@@ -514,6 +546,11 @@ bool text_directory_ui_init(void)
 // Public API: Set a status message
 void text_directory_ui_set_status(const char *msg)
 {
+    if(strcmp(status_message,msg) == 0) {
+        status_repeat++;
+    }else{
+        status_repeat = 0;
+    }
     strncpy(status_message, msg, sizeof(status_message) - 1);
     status_message[sizeof(status_message) - 1] = '\0';
     ui_draw_status_bar();
@@ -524,11 +561,10 @@ void text_directory_ui_update_header(uint8_t nosd) {
 }
 
 void text_directory_ui_draw_default_app() {
-    int y_start = UI_Y + HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT;
 
     set_default_entry();
     // Draw the entry using the helper function
-    ui_draw_directory_entry(0, y_start, 12, 1);
+    ui_draw_directory_entry(0);
 }
 
 // Public API: Main event loop for the UI
@@ -552,7 +588,7 @@ void text_directory_ui_run(void)
             if (entry_count > 0 && selected_index >= 0 && 
                 strlen(entries[selected_index].name) + (entries[selected_index].is_dir ? 1 : 0) > FILE_NAME_VISIBLE_CHARS)
             {
-                ui_update_selected_entry();
+                ui_update_selected_entry(0);
             }
             last_scroll_update = current_time;
         }

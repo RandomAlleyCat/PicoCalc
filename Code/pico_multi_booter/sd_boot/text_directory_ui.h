@@ -8,6 +8,9 @@
 
 #include <stdbool.h>
 
+#define ITEMS_PER_PAGE 16
+#define FONT_HEIGHT 12
+#define ENTRY_PADDING 2
 // Callback type: invoked when the user makes a final selection. The selected path is passed as an argument.
 typedef void (*final_selection_callback_t)(const char *selected_path);
 
