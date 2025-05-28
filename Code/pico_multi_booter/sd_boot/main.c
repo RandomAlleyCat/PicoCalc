@@ -307,7 +307,7 @@ int main()
     if (!sd_card_inserted())
     {
         DEBUG_PRINT("SD card not detected\n");
-        text_directory_ui_set_status("SD card not detected.");
+        text_directory_ui_set_status("Enter to exec.");
 		text_directory_ui_update_header(1);
         // Poll until SD card is inserted
         text_directory_ui_draw_default_app();

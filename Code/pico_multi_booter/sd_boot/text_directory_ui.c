@@ -87,7 +87,7 @@ static uint8_t last_page_index = 0;
 static uint8_t update_sel = 0;
 static uint8_t update_required=0;
 extern uint8_t status_flag;
-static uint8_t status_repeat=0;
+static uint32_t status_repeat=0;
 static char status_message[256] = "";                    // Status message
 static final_selection_callback_t final_callback = NULL; // Callback for file selection
 static uint32_t last_scrolling = 0; // for text scrolling in selected entry
@@ -363,6 +363,7 @@ static void ui_update_selected_entry(uint8_t last)
 
 static void ui_clear_directory_list(void){
     if(entry_count <1 ) return;
+    int y_start = UI_Y + HEADER_TITLE_HEIGHT + PATH_HEADER_HEIGHT;
 
     for(int i=1;i<entry_count;i++){
         strncpy(entries[entry_count].name, "", sizeof(entries[entry_count].name) - 1);
@@ -370,6 +371,8 @@ static void ui_clear_directory_list(void){
         entries[entry_count].is_dir = 0;
         entries[entry_count].file_size = 0;
     }
+
+    draw_rect_spi(UI_X, y_start, UI_X + UI_WIDTH - 1, UI_Y + UI_HEIGHT - STATUS_BAR_HEIGHT - 1, COLOR_BG);
 
     entry_count = 1;
     selected_index = 0;
@@ -451,7 +454,7 @@ void process_key_event(int key)
         update_sel = 1;
         ui_draw_directory_list();
         if(status_flag) {
-            text_directory_ui_set_status("Up/Down to select,Enter to exec.");
+            text_directory_ui_set_status("Up/Down to select, Enter to exec.");
         }
         break;
     case KEY_ARROW_DOWN:
@@ -464,7 +467,7 @@ void process_key_event(int key)
         update_sel = 1;
         ui_draw_directory_list();
         if(status_flag) {
-            text_directory_ui_set_status("Up/Down to select,Enter to exec.");
+            text_directory_ui_set_status("Up/Down to select, Enter to exec.");
         }
         break;
     case KEY_ENTER:
@@ -538,6 +541,10 @@ bool text_directory_ui_init(void)
     strncpy(current_path, "/firmware", sizeof(current_path));
     load_directory(current_path);
 	text_directory_ui_set_status("");
+    if(status_flag) {
+        text_directory_ui_set_status("Up/Down to select, Enter to exec.");
+        status_repeat = 2;
+    }
     ui_refresh();
     last_scrolling = time_us_64()/1000;
     return true;
@@ -598,6 +605,7 @@ void text_directory_ui_run(void)
             text_directory_ui_set_status("SD card removed. Please reinsert.");
 			ui_draw_path_header(1); 
             ui_clear_directory_list();
+            update_required = 1;
             ui_draw_directory_list();
             // Wait until the SD card is reinserted
             while (!sd_card_inserted()) {
