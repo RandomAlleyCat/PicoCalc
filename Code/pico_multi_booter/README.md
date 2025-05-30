@@ -8,6 +8,8 @@ Here is a bootloader for PicoCalc combined slightly modified [PicoMite](https://
 
 ## How to compile
 ```
+git clone --recursive https://github.com/clockworkpi/PicoCalc.git
+cd PicoCalc/Code/pico_multi_booter
 export PICO_SDK_PATH=/where/picosdk/is
 mkdir build
 cd build

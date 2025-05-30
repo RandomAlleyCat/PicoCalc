@@ -4,6 +4,9 @@ Demonstrate how to use spi screen, i2c keyboard and psram on PicoCalc.
 
 ## Building
 ```
+git clone --recursive https://github.com/clockworkpi/PicoCalc.git
+cd PicoCalc/Code/picocalc_helloworld/
+
 mkdir build
 cd build
 export PICO_SDK_PATH=/where/pico-sdk/is
