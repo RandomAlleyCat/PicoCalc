@@ -285,7 +285,7 @@ void final_selection_callback(const char *path)
 
 int main()
 {
-    char buf[64];
+    uint32_t  cur_time,last_time=0;
     stdio_init_all();
 
     uart_init(uart0, 115200);
@@ -301,7 +301,9 @@ int main()
     lcd_init();
     lcd_clear();
 	text_directory_ui_pre_init();
- 
+
+    cur_time = time_us_64() / 1000;
+    last_time = cur_time;
     // Check for SD card presence
     DEBUG_PRINT("Checking for SD card...\n");
     if (!sd_card_inserted())
@@ -314,11 +316,16 @@ int main()
         text_directory_ui_set_final_callback(final_selection_callback);
         while (!sd_card_inserted())
         {
+            cur_time = time_us_64() / 1000;
             int key = keypad_get_key();
             if (key != 0)
                 process_key_event(key);
 
             sleep_ms(20);
+            if(cur_time - last_time > 60000) {
+                text_directory_ui_update_header(1);
+                last_time = cur_time;
+            }
         }
         
         // Card detected, wait for it to stabilize

@@ -426,6 +426,15 @@ static void ui_draw_status_bar(void)
 
 }
 
+static void ui_draw_battery_status(){
+    char buf[8];
+    int pcnt = keypad_get_battery();
+
+    sprintf(buf,"%d%%",pcnt);
+    int y = UI_Y + HEADER_TITLE_HEIGHT;
+    //draw_rect_spi(UI_X, y, UI_X + UI_WIDTH - 1, y + PATH_HEADER_HEIGHT - 1, COLOR_BG);
+    draw_text(UI_X + 240, y + 2, buf, COLOR_FG, COLOR_BG);
+}
 // Refresh the entire UI
 static void ui_refresh(void)
 {
@@ -436,7 +445,7 @@ static void ui_refresh(void)
 	if(entry_count == 0) {
         ui_draw_empty_tip();
 	}
-  
+    ui_draw_battery_status();
 }
 
 // Handle key events for navigation and selection
@@ -565,6 +574,7 @@ void text_directory_ui_set_status(const char *msg)
 
 void text_directory_ui_update_header(uint8_t nosd) {
     ui_draw_path_header(nosd);
+    ui_draw_battery_status();
 }
 
 void text_directory_ui_draw_default_app() {
@@ -578,16 +588,14 @@ void text_directory_ui_draw_default_app() {
 void text_directory_ui_run(void)
 {
     uint32_t last_scroll_update = 0;
-    const uint32_t SCROLL_UPDATE_MS = 500; // Update scrolling text every 100ms
-    
+    uint32_t last_bat_update = 0;
     while (true)
     {
+        uint32_t current_time = time_us_64() / 1000;
         int key = keypad_get_key();
         if (key != 0)
             process_key_event(key);
 
-        uint32_t current_time = time_us_64() / 1000;
-        
         // Update scrolling text periodically
         if (current_time - last_scroll_update > SCROLL_UPDATE_MS)
         {
@@ -599,21 +607,29 @@ void text_directory_ui_run(void)
             }
             last_scroll_update = current_time;
         }
-
+        if(current_time - last_bat_update > BAT_UPDATE_MS){
+            text_directory_ui_update_header(!status_flag);
+            last_bat_update = current_time;
+        }
         // Check for SD card removal during runtime
         if (!sd_card_inserted()) {
             text_directory_ui_set_status("SD card removed. Please reinsert.");
-			ui_draw_path_header(1); 
+            text_directory_ui_update_header(!status_flag);
             ui_clear_directory_list();
             update_required = 1;
             ui_draw_directory_list();
             // Wait until the SD card is reinserted
             while (!sd_card_inserted()) {
+                current_time = time_us_64() / 1000;
                 key = keypad_get_key();
                 if (key != 0)
                     process_key_event(key);
 
                 sleep_ms(20);
+                if(current_time - last_bat_update > BAT_UPDATE_MS){
+                    text_directory_ui_update_header(!status_flag);
+                    last_bat_update = current_time;
+                }
             }
             
             // Once reinserted, update the UI and reinitialize filesystem
