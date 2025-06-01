@@ -429,11 +429,16 @@ static void ui_draw_status_bar(void)
 static void ui_draw_battery_status(){
     char buf[8];
     int pcnt = keypad_get_battery();
-
+    int level = pcnt * 13 / 100;
+    int pad = 0;
     sprintf(buf,"%d%%",pcnt);
     int y = UI_Y + HEADER_TITLE_HEIGHT;
+    if(pcnt < 10) { pad = 8;}
+    else if( pcnt >= 10 && pcnt < 100){pad = 0;}
+    else if(pcnt == 100){pad = -8;}
     //draw_rect_spi(UI_X, y, UI_X + UI_WIDTH - 1, y + PATH_HEADER_HEIGHT - 1, COLOR_BG);
-    draw_text(UI_X + 240, y + 2, buf, COLOR_FG, COLOR_BG);
+    draw_text(UI_X + UI_WIDTH-16-20-5+pad, y + 2, buf, COLOR_FG, COLOR_BG);
+    draw_battery_icon(UI_X+UI_WIDTH-16,y+4,level);
 }
 // Refresh the entire UI
 static void ui_refresh(void)
@@ -571,6 +576,7 @@ void text_directory_ui_set_status(const char *msg)
     status_message[sizeof(status_message) - 1] = '\0';
     ui_draw_status_bar();
 }
+
 
 void text_directory_ui_update_header(uint8_t nosd) {
     ui_draw_path_header(nosd);
