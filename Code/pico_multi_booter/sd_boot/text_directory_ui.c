@@ -446,10 +446,12 @@ static void ui_refresh(void)
     ui_draw_title();
     ui_draw_path_header(0);
     ui_draw_directory_list();
-    ui_draw_status_bar();
 	if(entry_count == 0) {
+        text_directory_ui_set_status("Enter to exec.");
         ui_draw_empty_tip();
-	}
+	}else{
+        ui_draw_status_bar();
+    }
     ui_draw_battery_status();
 }
 
