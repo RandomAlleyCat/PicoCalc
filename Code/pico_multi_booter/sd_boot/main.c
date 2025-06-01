@@ -322,7 +322,7 @@ int main()
                 process_key_event(key);
 
             sleep_ms(20);
-            if(cur_time - last_time > 60000) {
+            if(cur_time - last_time > BAT_UPDATE_MS) {
                 text_directory_ui_update_header(1);
                 last_time = cur_time;
             }
