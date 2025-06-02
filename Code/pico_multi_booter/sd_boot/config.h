@@ -36,7 +36,7 @@
 // According to the applink.map ,with combined PicoMite, here is 920k
 // This offset is used to ensure that the bootloader does not get overwritten
 // when loading a new application from the SD card
-#define SD_BOOT_FLASH_OFFSET         (152 * 1024)
+#define SD_BOOT_FLASH_OFFSET         (200 * 1024)
 
 // Maximum size of the application that can be loaded
 // This ensures we don't overwrite the bootloader itself

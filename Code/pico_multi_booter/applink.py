@@ -463,12 +463,20 @@ def Built(dir, app):
         if adr + length - 1 > last : last = adr + length - 1
       block = Uf2Block(f)
 
+##enlarge sd_boot flash size
+  if app == "sd_boot":
+    print("original last: ", last," ",'{:02X}'.format(last))
+    print("orignal size: ","{:>3}k".format(Size(last-strt, 1024)))
+    print("orignal used: ","{:>3}k".format(Size(last, 4*1024)))
+    if last < 0x10032000:
+      last = 0x10032000
+
   size = "{:>3}k".format(Size(last-strt, 1024))
   used = "{:>3}k".format(Size(last, 4*1024))
   
   print(last,strt) 
   print(size,used)
-    
+ 
   mapfile = os.path.join(dir, "applink.map")
   if (strt & 0x0FFFFFFF) == 0:
     with open(mapfile, "w") as f:
