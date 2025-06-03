@@ -34,6 +34,8 @@ void text_directory_ui_set_status(const char *msg);
 
 void text_directory_ui_update_header(uint8_t nosd);
 
+void text_directory_ui_update_title();
+
 void text_directory_ui_draw_default_app();
 
 void process_key_event(int);

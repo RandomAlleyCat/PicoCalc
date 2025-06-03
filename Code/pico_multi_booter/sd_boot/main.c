@@ -254,7 +254,7 @@ void final_selection_callback(const char *path)
     if(path == NULL) {
         //load default app from flash
 
-        snprintf(status_message, sizeof(status_message), "SEL: %s", "FLASH+152k");
+        snprintf(status_message, sizeof(status_message), "SEL: %s", "FLASH+200k");
         text_directory_ui_set_status(status_message);
         sleep_ms(200);
         load_firmware_by_path(path);
@@ -311,6 +311,7 @@ int main()
         DEBUG_PRINT("SD card not detected\n");
         text_directory_ui_set_status("Enter to exec.");
 		text_directory_ui_update_header(1);
+        text_directory_ui_update_title();
         // Poll until SD card is inserted
         text_directory_ui_draw_default_app();
         text_directory_ui_set_final_callback(final_selection_callback);
@@ -323,7 +324,7 @@ int main()
 
             sleep_ms(20);
             if(cur_time - last_time > BAT_UPDATE_MS) {
-                text_directory_ui_update_header(1);
+                text_directory_ui_update_title();
                 last_time = cur_time;
             }
         }

@@ -49,7 +49,7 @@ extern bool fs_init(void);
 // UI Colors
 #define COLOR_BG BLACK
 #define COLOR_FG WHITE
-#define COLOR_HIGHLIGHT GRAY
+#define COLOR_HIGHLIGHT LITEGRAY
 
 // Maximum number of directory entries
 #define MAX_ENTRIES 128
@@ -146,7 +146,7 @@ static void format_file_size(off_t size, int is_dir, char *buf, size_t buf_size)
 
 static void set_default_entry(){
     entry_count = 0;
-    strncpy(entries[entry_count].name, "[Default app]", sizeof(entries[entry_count].name) - 1);
+    strncpy(entries[entry_count].name, "[Default App]", sizeof(entries[entry_count].name) - 1);
     entries[entry_count].name[sizeof(entries[entry_count].name) - 1] = '\0';
     entries[entry_count].is_dir = IS_LAST_APP;
     entries[entry_count].file_size = 0; 
@@ -340,8 +340,8 @@ static void ui_draw_directory_entry(int entry_idx)
                     size_buffer, sizeof(size_buffer));
     
     // Draw filename and file size
-    draw_text(FILE_NAME_X, posY, display_buffer, COLOR_FG , is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
-    draw_text(FILE_SIZE_X, posY, size_buffer, COLOR_FG, is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
+    draw_text(FILE_NAME_X, posY, display_buffer, is_selected?COLOR_BG:COLOR_FG , is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
+    draw_text(FILE_SIZE_X, posY, size_buffer, is_selected?COLOR_BG: COLOR_FG, is_selected ? COLOR_HIGHLIGHT : COLOR_BG);
 }
 
 /**
@@ -429,14 +429,16 @@ static void ui_draw_status_bar(void)
 static void ui_draw_battery_status(){
     char buf[8];
     int pcnt = keypad_get_battery();
+    if(pcnt < 0) return;
     int level = pcnt * 13 / 100;
     int pad = 0;
     sprintf(buf,"%d%%",pcnt);
-    int y = UI_Y + HEADER_TITLE_HEIGHT;
+    int y = UI_Y;
     if(pcnt < 10) { pad = 8;}
     else if( pcnt >= 10 && pcnt < 100){pad = 0;}
     else if(pcnt == 100){pad = -8;}
-    //draw_rect_spi(UI_X, y, UI_X + UI_WIDTH - 1, y + PATH_HEADER_HEIGHT - 1, COLOR_BG);
+
+    draw_rect_spi(UI_X + UI_WIDTH-16-20-5-8, y, UI_X + UI_WIDTH, y + HEADER_TITLE_HEIGHT, COLOR_BG);
     draw_text(UI_X + UI_WIDTH-16-20-5+pad, y + 2, buf, COLOR_FG, COLOR_BG);
     draw_battery_icon(UI_X+UI_WIDTH-16,y+4,level);
 }
@@ -452,7 +454,7 @@ static void ui_refresh(void)
 	}else{
         ui_draw_status_bar();
     }
-    ui_draw_battery_status();
+    text_directory_ui_update_title();
 }
 
 // Handle key events for navigation and selection
@@ -582,6 +584,9 @@ void text_directory_ui_set_status(const char *msg)
 
 void text_directory_ui_update_header(uint8_t nosd) {
     ui_draw_path_header(nosd);
+}
+
+void text_directory_ui_update_title(){
     ui_draw_battery_status();
 }
 
@@ -616,13 +621,14 @@ void text_directory_ui_run(void)
             last_scroll_update = current_time;
         }
         if(current_time - last_bat_update > BAT_UPDATE_MS){
-            text_directory_ui_update_header(!status_flag);
+            text_directory_ui_update_title();
             last_bat_update = current_time;
         }
         // Check for SD card removal during runtime
         if (!sd_card_inserted()) {
             text_directory_ui_set_status("SD card removed. Please reinsert.");
             text_directory_ui_update_header(!status_flag);
+            text_directory_ui_update_title();
             ui_clear_directory_list();
             update_required = 1;
             ui_draw_directory_list();
@@ -635,7 +641,7 @@ void text_directory_ui_run(void)
 
                 sleep_ms(20);
                 if(current_time - last_bat_update > BAT_UPDATE_MS){
-                    text_directory_ui_update_header(!status_flag);
+                    text_directory_ui_update_title();
                     last_bat_update = current_time;
                 }
             }
