@@ -168,6 +168,11 @@ void receiveEvent(int howMany) {
       write_buffer[1] = js_bits;
       write_buffer_len = 2;
     }break;
+    case REG_ID_BOOT:{
+      write_buffer[0] = reg;
+      write_buffer[1] = keyboard_get_bootmode();
+      write_buffer_len = 2;
+    }break;
     default: {
       write_buffer[0] = 0;
       write_buffer[1] = 0;

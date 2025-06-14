@@ -78,6 +78,8 @@ static struct {
 
     bool numlock_changed;
     bool numlock;
+
+    uint8_t bootmode;
 } self;
 
 void output_string(char*str){
@@ -423,6 +425,11 @@ bool keyboard_get_numlock(void)
   return self.numlock;
 }
 
+uint8_t keyboard_get_bootmode(void)
+{
+  return self.bootmode;
+}
+
 void keyboard_init(void)
 {
   struct port_config port_init;
@@ -430,6 +437,8 @@ void keyboard_init(void)
 
   for (int i = 0; i < MOD_LAST; ++i)
     self.mods[i] = false;
+
+  self.bootmode = BOOTMODE_DEFAULT;
 
   // Rows
   port_init.direction = PORT_PIN_DIR_INPUT;
@@ -449,5 +458,13 @@ void keyboard_init(void)
   port_init.input_pull = PORT_PIN_PULL_UP;
   for(uint32_t i = 0; i < NUM_OF_BTNS; ++i)
     port_pin_set_config(btn_pins[i], &port_init);
+
+  //B12=left,B11=down [FWUPDATE],B10=up [SDCARD-MULTIBOOT],B9=right
+  if (port_pin_get_input_level(btn_pins[10]) == 0) {
+    self.bootmode = BOOTMODE_FWUPDATE;
+  }
+  if (port_pin_get_input_level(btn_pins[9]) == 0) {
+    self.bootmode = BOOTMODE_SDCARD;
+  }
 #endif
 }
