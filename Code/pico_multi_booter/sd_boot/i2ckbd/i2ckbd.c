@@ -83,3 +83,25 @@ int read_battery() {
     }
     return -1;
 }
+
+int read_bootmode() {
+    int retval;
+    unsigned char msg[2];
+    msg[0] = 0x0e; // REG_ID_BOOT
+
+    if (i2c_inited == 0) return -1;
+
+    retval = i2c_write_timeout_us(I2C_KBD_MOD, I2C_KBD_ADDR, msg, 1, false, 500000);
+    if (retval == PICO_ERROR_GENERIC || retval == PICO_ERROR_TIMEOUT) {
+        DEBUG_PRINT("Boot I2C write err\n");
+        return -1;
+    }
+    sleep_ms(16);
+    retval = i2c_read_timeout_us(I2C_KBD_MOD, I2C_KBD_ADDR, (unsigned char *) msg, 2, false, 500000);
+    if (retval == PICO_ERROR_GENERIC || retval == PICO_ERROR_TIMEOUT || msg[0] != 0x0e) {
+        DEBUG_PRINT("Boot I2C read err\n");
+        return -1;
+    }
+
+    return msg[1];
+}

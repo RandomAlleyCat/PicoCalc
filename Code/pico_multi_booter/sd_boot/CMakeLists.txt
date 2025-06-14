@@ -40,9 +40,10 @@ target_compile_options(${APP_NAME} PRIVATE
         -Wall
         -Wno-unused-variable
         -Wno-unused-function
+        -DPICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE=0
 ) 
 
-pico_enable_stdio_usb(${APP_NAME} 0)
+pico_enable_stdio_usb(${APP_NAME} 1)
 pico_enable_stdio_uart(${APP_NAME} 1)
 
 pico_add_extra_outputs(${APP_NAME})
