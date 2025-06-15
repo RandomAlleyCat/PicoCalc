@@ -314,6 +314,27 @@ void final_selection_callback(const char *path)
     load_firmware_by_path(path);
 }
 
+int read_bootmode() 
+{
+    int key = keypad_get_key();
+    int _x;
+    DEBUG_PRINT("read_bootmode key = %d\n", key);
+    while((_x = keypad_get_key()) > 0) {
+        // drain the keypad input buffer
+        DEBUG_PRINT("read_bootmode subsequent key = %d\n", _x);
+    }
+    int bootmode = 0; // Default boot mode
+    if (key == KEY_ARROW_UP)
+    {
+        bootmode = 1; // SD card boot mode
+    }
+    else if (key == KEY_ARROW_DOWN)
+    {
+        bootmode = 2; // Firmware update mode
+    }
+    return bootmode;
+}
+
 int main()
 {
     uint32_t  cur_time,last_time=0;
