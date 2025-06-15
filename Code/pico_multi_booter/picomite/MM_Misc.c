@@ -2050,7 +2050,7 @@ void MIPS16 printoptions(void){
 		}
         PRet();
     }
-    if(Option.DISPLAY_TYPE >= VIRTUAL){
+    if(Option.DISPLAY_TYPE >= VIRTUAL && Option.DISPLAY_TYPE<NEXTGEN){
         PO("LCDPANEL"); MMPrintString((char *)display_details[Option.DISPLAY_TYPE].name); PRet();
     } 
     #ifdef GUICONTROLS
@@ -2835,9 +2835,6 @@ OPTION MODBUFF ENABLE 192 */
 #ifdef PICOCALC
        if(checkstring(p,(unsigned char *) "PICOCALC"))  {
             ResetOptions(false);
-            //Option.CPU_Speed=252000;
-            //Option.modbuffsize=192;
-            //Option.modbuff = true;
             Option.ColourCode = 1;
             Option.SYSTEM_CLK = 14;
             Option.SYSTEM_MOSI = 15;
@@ -2853,7 +2850,7 @@ OPTION MODBUFF ENABLE 192 */
             Option.AUDIO_DCS_PIN = 0;
             Option.AUDIO_DREQ_PIN = 0;
             Option.AUDIO_RESET_PIN = 0;
-            Option.DISPLAY_TYPE = ILI9488;
+            Option.DISPLAY_TYPE = ST7796SP;
             Option.DISPLAY_BL = 0; //stm32 controls the backlight
             Option.DISPLAY_ORIENTATION = PORTRAIT;
             Option.LCD_CD = 19;
@@ -3116,8 +3113,7 @@ void MIPS16 cmd_option(void) {
 #ifndef PICOMITEVGA
 	tp = checkstring(cmdline, (unsigned char *)"LCD320");
 	if(tp) {
-        if(!( SSD16TYPE || Option.DISPLAY_TYPE==IPS_4_16 || SPI480 || Option.DISPLAY_TYPE==ILI9488P)) error("Only available on SSD1963, 480x320 SPI displays and IPS_4_16 displays");
-        if(!(Option.DISPLAY_ORIENTATION==LANDSCAPE || Option.DISPLAY_ORIENTATION==RLANDSCAPE || Option.DISPLAY_TYPE==ILI9488P))error("Only available in landscape mode");
+        if(!( SSD16TYPE  && (Option.DISPLAY_ORIENTATION==LANDSCAPE || Option.DISPLAY_ORIENTATION==RLANDSCAPE))) error("Only available on 16-bit SSD1963 and IPS_4_16 displays in Landscape");
         if(( SSD16TYPE || Option.DISPLAY_TYPE==IPS_4_16)){
             if(checkstring(tp, (unsigned char *)"OFF"))	{ 
                 clear320();
@@ -3133,24 +3129,6 @@ void MIPS16 cmd_option(void) {
                 HRes=320;
                 VRes=240;
                 buff320=GetMemory(320*6);
-                return; 
-            } else error("Syntax");
-        } else if(Option.DISPLAY_TYPE==ILI9488P){
-            if(checkstring(tp, (unsigned char *)"OFF"))	{ 
-                VRes=320;
-                return;
-            }
-            else if(checkstring(tp, (unsigned char *)"ON"))	{ 
-                HRes=320;
-                return; 
-            } 
-        } else if(SPI480){
-            if(checkstring(tp, (unsigned char *)"OFF"))	{ 
-                clear320();
-                return;
-            }
-            else if(checkstring(tp, (unsigned char *)"ON"))	{ 
-                VRes=240;
                 return; 
             } else error("Syntax");
         } else error("Invalid display type");
@@ -3657,7 +3635,7 @@ tp = checkstring(cmdline, (unsigned char *)"HEARTBEAT");
     if(tp) {
    	    if(CurrentLinePtr) error("Invalid in a program");
         Option.NoScroll = 0;
-        if(!(Option.DISPLAY_TYPE==ST7789B || Option.DISPLAY_TYPE==ILI9488  || Option.DISPLAY_TYPE == ST7796S || Option.DISPLAY_TYPE == ILI9488P || Option.DISPLAY_TYPE==ILI9341 || Option.DISPLAY_TYPE>=VGADISPLAY))Option.NoScroll=1;
+        if(!(Option.DISPLAY_TYPE==ST7789B || Option.DISPLAY_TYPE==ILI9488 || Option.DISPLAY_TYPE == ST7796SP  || Option.DISPLAY_TYPE == ST7796S || Option.DISPLAY_TYPE == ILI9488P || Option.DISPLAY_TYPE==ILI9341 || Option.DISPLAY_TYPE>=VGADISPLAY))Option.NoScroll=1;
         if(!(Option.DISPLAY_ORIENTATION == DISPLAY_LANDSCAPE) && Option.DISPLAY_TYPE==SSDTYPE) error("Landscape only");
         skipspace(tp);
         Option.DefaultFC = WHITE;

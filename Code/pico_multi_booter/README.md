@@ -4,7 +4,7 @@ Here is a bootloader for PicoCalc combined slightly modified [PicoMite](https://
 
 - Pico1 
 - No sdcard inserted,load default app to run from flash. 
-- Sdcard inserted, SD boot menu will show up, load third pico app bin to run at FLASH TARGET OFFSET 2048k-200k
+- Sdcard inserted, SD boot menu will show up, load third pico app bin to run at FLASH TARGET OFFSET 2048k-188k
 
 ## How to compile
 ```
@@ -37,7 +37,7 @@ config.h
 ### SD Card Application Build and Deployment
 **Important Note:**   
 ```
-Applications intended for SD card boot "MUST REBUILD" using a custom linker script to accommodate the program's offset(200k) address.
+Applications intended for SD card boot "MUST REBUILD" using a custom linker script to accommodate the program's offset(188k) address.
 
 Applications intended for SD card boot is in **bin** format, not uf2.
  
@@ -48,7 +48,7 @@ This section explains how to build and deploy applications on an SD card. Below 
 
 
 #### Step 1 Copy Custom Link Script
-Copy `memmap_sdcard_app.ld` to your project repository.
+Copy `memmap_default_rp2040.ld` and `memmap_default_rp2350.ld` to your project repository.
 
 
 #### Step 2 Add Custom Link Script to CMakeList.txt
@@ -61,7 +61,6 @@ pico_add_extra_outputs(${CMAKE_PROJECT_NAME})
 ...
 
 function(enable_sdcard_app target)
-  #pico_set_linker_script(${target} ${CMAKE_SOURCE_DIR}/memmap_sdcard_app.ld)
   if(${PICO_PLATFORM} STREQUAL "rp2040")
     pico_set_linker_script(${CMAKE_PROJECT_NAME} ${CMAKE_SOURCE_DIR}/memmap_default_rp2040.ld)
   elseif(${PICO_PLATFORM} MATCHES "rp2350")
