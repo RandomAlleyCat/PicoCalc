@@ -1,5 +1,4 @@
 #include "reg.h"
-#include "keyboard.h"
 
 static uint8_t regs[REG_ID_LAST];
 
@@ -43,5 +42,4 @@ void reg_init(void)
   regs[REG_ID_BKL] = 255;//100%duty
   regs[REG_ID_BK2] = 0;
   regs[REG_ID_BAT] = 0; //default .no battery ,no charging
-  regs[REG_ID_BOOT] = BOOTMODE_DEFAULT;
 }

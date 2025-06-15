@@ -58,10 +58,6 @@ enum key_state
 #define KEY_F9 0x89
 #define KEY_F10 0x90
 
-#define BOOTMODE_DEFAULT  0x00 // normal boot mode
-#define BOOTMODE_SDCARD   0x01 // sdcard multiboot: loads .bin to FLASH+200K
-#define BOOTMODE_FWUPDATE 0x02 // enter BOOTSEL to upload .uf2 firmware
-
 typedef void (*key_callback)(char, enum key_state);
 typedef void (*lock_callback)(bool, bool);
 
@@ -70,7 +66,6 @@ void keyboard_set_key_callback(key_callback callback);
 void keyboard_set_lock_callback(lock_callback callback);
 bool keyboard_get_capslock(void);
 bool keyboard_get_numlock(void);
-uint8_t keyboard_get_bootmode(void);
 void keyboard_init(void);
 
 #define NUM_OF_COLS 8
