@@ -429,5 +429,9 @@ int main()
     
     text_directory_ui_init();
     text_directory_ui_set_final_callback(final_selection_callback);
+
+    while(keypad_get_key() > 0) {
+        // drain the keypad input buffer
+    }
     text_directory_ui_run();
 }
