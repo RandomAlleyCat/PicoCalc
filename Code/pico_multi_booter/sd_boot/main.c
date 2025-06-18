@@ -285,7 +285,7 @@ void final_selection_callback(const char *path)
     if(path == NULL) {
         //load default app from flash
 
-        snprintf(status_message, sizeof(status_message), "SEL: %s", "FLASH+188k");
+        snprintf(status_message, sizeof(status_message), "SEL: %s", "FLASH+200k");
         text_directory_ui_set_status(status_message);
         sleep_ms(200);
         load_firmware_by_path(path);

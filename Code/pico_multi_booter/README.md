@@ -4,7 +4,7 @@ Here is a bootloader for PicoCalc combined slightly modified [PicoMite](https://
 
 - Pico1 
 - No sdcard inserted,load default app to run from flash. 
-- Sdcard inserted, SD boot menu will show up, load third pico app bin to run at FLASH TARGET OFFSET 2048k-188k
+- Sdcard inserted, SD boot menu will show up, load third pico app bin to run at FLASH TARGET OFFSET 2048k-200k
 
 ## How to compile
 ```
@@ -37,7 +37,7 @@ config.h
 ### SD Card Application Build and Deployment
 **Important Note:**   
 ```
-Applications intended for SD card boot "MUST REBUILD" using a custom linker script to accommodate the program's offset(188k) address.
+Applications intended for SD card boot "MUST REBUILD" using a custom linker script to accommodate the program's offset(200k) address.
 
 Applications intended for SD card boot is in **bin** format, not uf2.
  

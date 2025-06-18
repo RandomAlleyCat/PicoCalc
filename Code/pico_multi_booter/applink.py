@@ -468,8 +468,8 @@ def Built(dir, app):
     print("original last: ", last," ",'{:02X}'.format(last))
     print("orignal size: ","{:>3}k".format(Size(last-strt, 1024)))
     print("orignal used: ","{:>3}k".format(Size(last, 4*1024)))
-    if last < 0x1002F000:
-      last = 0x1002F000
+    if last < 0x10032000:
+      last = 0x10032000
 
   size = "{:>3}k".format(Size(last-strt, 1024))
   used = "{:>3}k".format(Size(last, 4*1024))

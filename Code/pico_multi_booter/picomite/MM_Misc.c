@@ -4659,7 +4659,8 @@ tp = checkstring(cmdline, (unsigned char *)"HEARTBEAT");
         enable_interrupts_pico();
         uSec(10000);
         disable_interrupts_pico();
-        flash_range_program(FLASH_TARGET_OFFSET, (const uint8_t *)&Option, 768);
+        // XXX @cuu not writing sizeof(option)?
+        flash_range_program(FLASH_TARGET_OFFSET, (const uint8_t *)&Option, sizeof(struct option_s));
         enable_interrupts_pico();
         _excep_code = RESET_COMMAND;
         SoftReset();

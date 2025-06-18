@@ -5490,6 +5490,7 @@ void SaveOptions(void)
     enable_interrupts_pico();
     uSec(10000);
     disable_interrupts_pico();
+    // XXX @cuu erased 4K, but only write sizeof(option) back?
     flash_range_program(FLASH_TARGET_OFFSET, (const uint8_t *)&Option, sizeof(struct option_s));
     enable_interrupts_pico();
 }
