@@ -5484,14 +5484,19 @@ void ClearSavedVars(void)
 }
 void SaveOptions(void)
 {
+    uint8_t buf[FLASH_ERASE_SIZE];
+    // load flash content to buf
+    memcpy(buf, (const void*)(XIP_BASE + FLASH_TARGET_OFFSET), FLASH_ERASE_SIZE);
+    // overwrite the options
+    memcpy(buf, (const uint8_t *)&Option, sizeof(struct option_s));
     uSec(100000);
     disable_interrupts_pico();
     flash_range_erase(FLASH_TARGET_OFFSET, FLASH_ERASE_SIZE);
     enable_interrupts_pico();
     uSec(10000);
     disable_interrupts_pico();
-    // XXX @cuu erased 4K, but only write sizeof(option) back?
-    flash_range_program(FLASH_TARGET_OFFSET, (const uint8_t *)&Option, sizeof(struct option_s));
+    // save flash block back
+    flash_range_program(FLASH_TARGET_OFFSET, buf, FLASH_ERASE_SIZE);
     enable_interrupts_pico();
 }
 /*  @endcond */
