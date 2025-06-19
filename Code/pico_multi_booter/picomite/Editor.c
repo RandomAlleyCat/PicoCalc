@@ -374,8 +374,8 @@ void edit(unsigned char *cmdline, bool cmdfile) {
         gui_fcolour = WHITE;
         gui_bcolour = BLACK;
     }
-    if(Option.DISPLAY_CONSOLE == true && gui_font_width > 16*HRes/640) error("Font is too large");
-    if(Option.DISPLAY_TYPE>=VIRTUAL && WriteBuf)FreeMemorySafe((void **)&WriteBuf);
+    if(Option.DISPLAY_CONSOLE == true && HRes/gui_font_width <32) error("Font is too large");
+    if(Option.DISPLAY_TYPE>=VIRTUAL  && Option.DISPLAY_TYPE<NEXTGEN && WriteBuf)FreeMemorySafe((void **)&WriteBuf);
     if(cmdfile){
         ClearVars(0,true);
         ClearRuntime(true);
@@ -578,12 +578,9 @@ void FullScreenEditor(int xx, int yy, char *fname, int edit_buff_size, bool cmdf
   int ytileheightsave;
   ytileheightsave=ytileheight;
   OptionY_TILESave=Y_TILE;
-  if(!Option.ColourCode)ytileheight=16;
-  else {
-        ytileheight=gui_font_height;
-        Y_TILE=VRes/ytileheight;
-        if(VRes % ytileheight)Y_TILE++;
-  }
+  ytileheight=gui_font_height;
+  Y_TILE=VRes/ytileheight;
+  if(VRes % ytileheight)Y_TILE++;
 #else 
   char RefreshSave=Option.Refresh;
   Option.Refresh=0;
@@ -1134,7 +1131,7 @@ void FullScreenEditor(int xx, int yy, char *fname, int edit_buff_size, bool cmdf
 	                        clearrepeat();
 #endif	                        
                             return;
-
+ 
               // Search
               case CTRLKEY('R'):
               case F3:    GetInputString((unsigned char *)"Find (Use SHIFT-F3 to repeat): ");

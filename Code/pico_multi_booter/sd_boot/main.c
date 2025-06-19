@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
+#include "pico/usb_reset_interface.h"
 #include "hardware/gpio.h"
 #include "hardware/clocks.h"
 #include "debug.h"
@@ -202,6 +204,35 @@ static bool is_valid_application(uint32_t *app_location)
     return true;
 }
 
+void boot_default()
+{
+    DEBUG_PRINT("entering boot_default\n");
+    // Get the pointer to the application flash area
+    uint32_t *app_location = (uint32_t *)(XIP_BASE + SD_BOOT_FLASH_OFFSET);
+    launch_application_from(app_location);
+    // We should never reach here
+    while (1)
+    {
+        tight_loop_contents();
+    }
+}
+
+void boot_fwupdate()
+{
+    DEBUG_PRINT("entering boot_fwupdate\n");
+    lcd_init();
+    lcd_clear();
+
+    draw_rect_spi(20, 140, 300, 180, WHITE);
+    lcd_set_cursor(30, 150);
+    lcd_print_string_color((char *)"FIRMWARE UPDATE", BLACK, WHITE);
+
+    sleep_ms(2000);
+
+    uint gpio_mask = 0u;
+    reset_usb_boot(gpio_mask, PICO_STDIO_USB_RESET_BOOTSEL_INTERFACE_DISABLE_MASK);
+}
+
 int load_firmware_by_path(const char *path)
 {
     text_directory_ui_set_status("STAT: Flashing firmware...");
@@ -283,6 +314,27 @@ void final_selection_callback(const char *path)
     load_firmware_by_path(path);
 }
 
+int read_bootmode() 
+{
+    int key = keypad_get_key();
+    int _x;
+    DEBUG_PRINT("read_bootmode key = %d\n", key);
+    while((_x = keypad_get_key()) > 0) {
+        // drain the keypad input buffer
+        DEBUG_PRINT("read_bootmode subsequent key = %d\n", _x);
+    }
+    int bootmode = 0; // Default boot mode
+    if (key == KEY_ARROW_UP)
+    {
+        bootmode = 1; // SD card boot mode
+    }
+    else if (key == KEY_ARROW_DOWN)
+    {
+        bootmode = 2; // Firmware update mode
+    }
+    return bootmode;
+}
+
 int main()
 {
     uint32_t  cur_time,last_time=0;
@@ -298,6 +350,27 @@ int main()
     gpio_pull_up(SD_DET_PIN); // Enable pull-up resistor
 
     keypad_init();
+
+    // Check bootmode now: 0=default, 1=sdcard, 2=fwupdate
+    int bootmode = read_bootmode();
+    DEBUG_PRINT("bootmode = %d\n", bootmode);
+    switch(bootmode) {
+      case 0:
+        // BOOTMODE_DEFAULT
+        boot_default();
+        break;
+      case 2:
+        // BOOTMODE_FWUPDATE
+        boot_fwupdate();
+        break;
+      case 1:
+        // BOOTMODE_SDCARD
+      default:
+        break;
+    }
+
+    // BEGIN SDCARD BOOT
+
     lcd_init();
     lcd_clear();
 	text_directory_ui_pre_init();
@@ -356,5 +429,9 @@ int main()
     
     text_directory_ui_init();
     text_directory_ui_set_final_callback(final_selection_callback);
+
+    while(keypad_get_key() > 0) {
+        // drain the keypad input buffer
+    }
     text_directory_ui_run();
 }

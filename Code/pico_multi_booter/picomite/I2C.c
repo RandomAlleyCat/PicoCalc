@@ -40,7 +40,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 
 #include "hardware/irq.h"
 
-#define nunaddr 0xA4 / 2;
 #define PinRead(a) gpio_get(PinDef[a].GPno)
 extern void DrawBufferMEM(int x1, int y1, int x2, int y2, unsigned char * p);
 extern void ReadBufferMEM(int x1, int y1, int x2, int y2, unsigned char * buff);
@@ -304,11 +303,17 @@ void cmd_i2c(void) {
       "CLOSE")) != NULL)
     i2cDisable(p);
   else if ((p = checkstring(cmdline, (unsigned char * )
-      "WRITE")) != NULL)
-    i2cSend(p);
+      "WRITE")) != NULL){
+        if(I2C0SDApin==Option.SYSTEM_I2C_SDA) I2C_Timeout=1000;
+        i2cSend(p);
+        if(I2C0SDApin==Option.SYSTEM_I2C_SDA) I2C_Timeout=SystemI2CTimeout;
+      }
   else if ((p = checkstring(cmdline, (unsigned char * )
-      "READ")) != NULL)
-    i2cReceive(p);
+      "READ")) != NULL){
+        if(I2C0SDApin==Option.SYSTEM_I2C_SDA) I2C_Timeout=1000;
+        i2cReceive(p);
+        if(I2C0SDApin==Option.SYSTEM_I2C_SDA) I2C_Timeout=SystemI2CTimeout;
+      }
   else if ((p = checkstring(cmdline, (unsigned char * )
       "CHECK")) != NULL)
     i2cCheck(p);
@@ -338,11 +343,17 @@ void cmd_i2c2(void) {
       "CLOSE")) != NULL)
     i2c2Disable(p);
   else if ((p = checkstring(cmdline, (unsigned char * )
-      "WRITE")) != NULL)
-    i2c2Send(p);
+      "WRITE")) != NULL){
+        if(I2C1SDApin==Option.SYSTEM_I2C_SDA) I2C2_Timeout=1000;
+        i2c2Send(p);
+        if(I2C1SDApin==Option.SYSTEM_I2C_SDA) I2C2_Timeout=SystemI2CTimeout;
+      }
   else if ((p = checkstring(cmdline, (unsigned char * )
-      "READ")) != NULL)
-    i2c2Receive(p);
+      "READ")) != NULL){
+        if(I2C1SDApin==Option.SYSTEM_I2C_SDA) I2C2_Timeout=1000;
+        i2c2Receive(p);
+        if(I2C1SDApin==Option.SYSTEM_I2C_SDA) I2C2_Timeout=SystemI2CTimeout;
+      }
   else if ((p = checkstring(cmdline, (unsigned char * )
       "CHECK")) != NULL)
     i2c2Check(p);
@@ -614,6 +625,7 @@ void CheckI2CKeyboard(int noerror, int read) {
 void RtcGetTime(int noerror) {
   char * buff = GetTempMemory(STRINGSIZE); // Received data is stored here
   int DS1307;
+  clocktimer=(1000*60*60);
   if (I2C0locked) {
     I2C_Sendlen = 1; // send one byte
     I2C_Rcvlen = 0;
@@ -691,9 +703,24 @@ void MIPS16 cmd_rtc(void) {
   unsigned char * p;
   void * ptr = NULL;
   if (!(I2C0locked || I2C1locked)) error("SYSTEM I2C not configured");
-  if (checkstring(cmdline, (unsigned char * )
-      "GETTIME")) {
-    RtcGetTime(0);
+  if (checkstring(cmdline, (unsigned char * )"GETTIME")) {
+    int repeat=5;
+    noRTC=0;
+    while(1){
+      while(!(classicread==0 && nunchuckread==0)){routinechecks();}
+      RtcGetTime(1);
+      if(noRTC==0)break;
+      repeat--;
+      if(!repeat)break;
+    }
+    if(noRTC){
+      if (CurrentLinePtr) error("RTC not responding");
+      if (Option.RTC) {
+        MMPrintString("RTC not responding");
+        MMPrintString("\r\n");
+      }
+    }
+  
     return;
   }
   if ((p = checkstring(cmdline, (unsigned char * )
@@ -1072,8 +1099,10 @@ void i2cCheck(unsigned char * p) {
   addr = getinteger(argv[0]);
   if (addr < 0 || addr > 0x7F) error("Invalid I2C address");
   //	int ret=i2c_read_blocking(i2c0, addr, &rxdata, 1, false);
-  int ret = i2c_read_timeout_us(i2c0, addr, & rxdata, 1, false, 100);
-  mmI2Cvalue = ret < 0 ? 1 : 0;
+  int i2cret = i2c_read_timeout_us(i2c0, addr, & rxdata, 1, false, 1000);
+  mmI2Cvalue = 0;
+  if (i2cret == PICO_ERROR_GENERIC) mmI2Cvalue = 1;
+  if (i2cret == PICO_ERROR_TIMEOUT) mmI2Cvalue = 2;
 }
 void i2c2Check(unsigned char * p) {
   int addr;
@@ -1084,8 +1113,10 @@ void i2c2Check(unsigned char * p) {
   addr = getinteger(argv[0]);
   if (addr < 0 || addr > 0x7F) error("Invalid I2C address");
   //	int ret=i2c_read_blocking(i2c1, addr, &rxdata, 1, false);
-  int ret = i2c_read_timeout_us(i2c1, addr, & rxdata, 1, false, 100);
-  mmI2Cvalue = ret < 0 ? 1 : 0;
+  int i2cret = i2c_read_timeout_us(i2c1, addr, & rxdata, 1, false, 1000);
+  mmI2Cvalue = 0;
+  if (i2cret == PICO_ERROR_GENERIC) mmI2Cvalue = 1;
+  if (i2cret == PICO_ERROR_TIMEOUT) mmI2Cvalue = 2;
 }
 // receive data from an I2C slave - master mode
 void i2cReceive(unsigned char * p) {
@@ -1446,6 +1477,7 @@ void GeneralReceive(unsigned int addr, int nbr, char * p) {
   if (I2C0locked) {
     I2C_Rcvbuf_Float = NULL;
     I2C_Rcvbuf_Int = NULL;
+    I2C_Rcvbuf_String = NULL;
     I2C_Sendlen = 0; // send one byte
     I2C_Rcvlen = nbr;
     I2C_Addr = addr; // address of the device
@@ -1453,6 +1485,7 @@ void GeneralReceive(unsigned int addr, int nbr, char * p) {
   } else {
     I2C2_Rcvbuf_Float = NULL;
     I2C2_Rcvbuf_Int = NULL;
+    I2C2_Rcvbuf_String = NULL;
     I2C2_Sendlen = 0; // send one byte
     I2C2_Rcvlen = nbr;
     I2C2_Addr = addr; // address of the device

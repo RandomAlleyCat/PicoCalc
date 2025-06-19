@@ -31,10 +31,15 @@ SETUP PICOCALC FIRMWARE
 mkdir -p ~/picocalc && cd ~/picocalc
 git clone https://github.com/madcock/PicoMiteAllVersions.git
 cd PicoMiteAllVersions
-mv ~/pico/pico-sdk/src/rp2_common/hardware_flash/flash.c ~/pico/pico-sdk/src/rp2_common/hardware_flash/flash.bak
-ln -s ~/picocalc/PicoMiteAllVersions/flash.c ~/pico/pico-sdk/src/rp2_common/hardware_flash/flash.c
 mv ~/pico/pico-sdk/src/rp2_common/hardware_gpio/gpio.c ~/pico/pico-sdk/src/rp2_common/hardware_gpio/gpio.bak
 ln -s ~/picocalc/PicoMiteAllVersions/gpio.c ~/pico/pico-sdk/src/rp2_common/hardware_gpio/gpio.c
+mv ~/pico/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio.h ~/pico/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio.bak
+ln -s ~/picocalc/PicoMiteAllVersions/gpio.h ~/pico/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio.h
+mv ~/pico/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S ~/pico/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.bak
+ln -s ~/picocalc/PicoMiteAllVersions/float_sci_m33_vfp.S ~/pico/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S
+mv ~/pico/pico-sdk/src/rp2_common/hardware_flash/flash.c ~/pico/pico-sdk/src/rp2_common/hardware_flash/flash.bak
+ln -s ~/picocalc/PicoMiteAllVersions/flash.c ~/pico/pico-sdk/src/rp2_common/hardware_flash/flash.c
+
 ```
 EDIT ``~/picocalc/PicoMiteAllVersions/CMakeLists.txt`` TO CHOOSE TARGET
 -----------------------------------------------------------------------
@@ -62,9 +67,11 @@ make
 (_original readme follows..._)
 
 # PicoMiteRP2350
-This contains files to build MMbasic V6.00.02RC23 to run on both RP2040 and RP2350<br>
+This contains files to build MMbasic V6.00.02 to run on both RP2040 and RP2350<br>
 Compile with GCC 13.3.1 arm-none-eabi<br>
-Build with sdk V2.1.1 but replace gpio.c and flash.c with the ones included here<br>
+
+<b style="color:red;"> Build with sdk V2.1.1 but replace gpio.c, gpio.h, float_sci_m33_vfp.S, and flash.c with the ones included here<br></b>
+
 Change CMakeLists.txt line 4 to determine which variant to build<br>
 <br>
 RP2040<br>
