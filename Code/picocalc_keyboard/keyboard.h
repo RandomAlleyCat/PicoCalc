@@ -58,6 +58,8 @@ enum key_state
 #define KEY_F9 0x89
 #define KEY_F10 0x90
 
+#define KEY_POWER 0x91 
+
 typedef void (*key_callback)(char, enum key_state);
 typedef void (*lock_callback)(bool, bool);
 

@@ -18,7 +18,7 @@
 #define DEBUG_UART
 TwoWire Wire2 = TwoWire(CONFIG_PMU_SDA, CONFIG_PMU_SCL);
 bool pmu_flag = 0;
-bool pmu_online = 0;
+uint8_t pmu_online = 0;
 uint8_t keycb_start = 0;
 
 uint8_t head_phone_status=LOW;
@@ -168,6 +168,16 @@ void receiveEvent(int howMany) {
       write_buffer[1] = js_bits;
       write_buffer_len = 2;
     }break;
+    case REG_ID_OFF:{
+      if(is_write){
+        pmu_online = rcv_data[1];
+        if(pmu_online < 6){
+          pmu_online = 6;
+        }
+      }
+      write_buffer[0] = reg;
+      write_buffer[1] = 1;
+    }break;
     default: {
       write_buffer[0] = 0;
       write_buffer[1] = 0;
@@ -265,6 +275,12 @@ void check_pmu_int() {
 
   if (!pmu_online) return;
   
+  if(pmu_online > 1) {
+    delay(1000*pmu_online);
+    PMU.shutdown();
+    return;
+  }
+
   if (time_uptime_ms() - run_time > 20000) {
     run_time = millis();  // reset time
     pcnt = PMU.getBatteryPercent();
@@ -345,6 +361,7 @@ void check_pmu_int() {
     if (PMU.isPekeyShortPressIrq()) {
       Serial1.println("isPekeyShortPress");
       // enterPmuSleep();
+      key_cb(KEY_POWER,KEY_STATE_PRESSED);//send a KEY_POWER to i2c 
 
       Serial1.print("Read pmu data buffer .");
       uint8_t data[4] = {0};
