@@ -178,6 +178,14 @@ void receiveEvent(int howMany) {
       write_buffer[0] = reg;
       write_buffer[1] = 1;
     }break;
+    case REG_ID_RST:{
+      if(is_write){
+        delay(rcv_data[1]*1000); 
+      }else{
+        delay(1000);
+      }
+      NVIC_SystemReset();
+    }break;
     default: {
       write_buffer[0] = 0;
       write_buffer[1] = 0;
