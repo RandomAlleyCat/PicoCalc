@@ -17,6 +17,7 @@ void init_i2c_kbd() {
 int read_i2c_kbd() {
     int retval;
     static int ctrlheld = 0;
+    static int altheld = 0;
     uint16_t buff = 0;
     unsigned char msg[2];
     int c = -1;
@@ -37,11 +38,17 @@ int read_i2c_kbd() {
     }
 
     if (buff != 0) {
-        if (buff == 0x7e03)ctrlheld = 0;
-        else if (buff == 0x7e02) {
-            ctrlheld = 1;
-        } else if ((buff & 0xff) == 1) {//pressed
-            c = buff >> 8;
+        uint8_t code = buff >> 8;
+        uint8_t state = buff & 0xff;
+
+        if (code == KEY_MOD_CTRL) {
+            if (state == 3) ctrlheld = 0;
+            else if (state == 2) ctrlheld = 1;
+        } else if (code == KEY_MOD_ALT) {
+            if (state == 3) altheld = 0;
+            else if (state == 2) altheld = 1;
+        } else if (state == 1) {//pressed
+            c = code;
             int realc = -1;
             switch (c) {
                 default:
@@ -49,6 +56,9 @@ int read_i2c_kbd() {
                     break;
             }
             c = realc;
+            if (c == KEY_DEL && ctrlheld && altheld) {
+                c = KEY_CTRL_ALT_DEL;
+            }
             if (c >= 'a' && c <= 'z' && ctrlheld)c = c - 'a' + 1;
         }
         return c;
