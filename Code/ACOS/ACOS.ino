@@ -83,7 +83,8 @@ void simulate_modem_dial() {
     tft.setCursor(tft.getCursorX(), tft.getCursorY());
     tft.print(*p);
     if (*p >= '0' && *p <= '9') {
-      play_dtmf_sequence(*p);
+      char digit[2] = {*p, '\0'};
+      play_dtmf_sequence(digit);
     }
     sleep_ms(150);
   }
