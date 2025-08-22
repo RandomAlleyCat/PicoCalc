@@ -12,5 +12,7 @@
 
 void init_pwm();
 void play_click();
+void play_dtmf_sequence(char digit);
+void play_modem_handshake();
 
 #endif //PWM_SOUND_H
