@@ -13,6 +13,7 @@
 void init_pwm();
 void play_click();
 void play_tone(uint freq_hz, uint duration_ms);
+void play_dual_tone(uint freq1, uint freq2, uint duration_ms);
 void play_dtmf_sequence(const char *digits);
 void play_modem_handshake();
 
