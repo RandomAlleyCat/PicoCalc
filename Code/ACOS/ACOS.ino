@@ -3,6 +3,7 @@
 #include <TFT_eSPI.h>       // Hardware-specific library
 #include <pico/stdlib.h>
 #include <hardware/gpio.h>
+#include <time.h>
 #include "i2ckbd.h"
 #include "pwm_sound.h"
 
