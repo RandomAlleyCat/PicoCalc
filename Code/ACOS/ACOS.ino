@@ -4,6 +4,7 @@
 #include <pico/stdlib.h>
 #include <hardware/gpio.h>
 #include "i2ckbd.h"
+#include "pwm_sound.h"
 
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
@@ -21,6 +22,11 @@ const uint LEDPIN = 25;
 
 File root;
 
+static int cursor_x = 0;
+static int cursor_y = 0;
+static char input_buffer[64];
+static int input_length = 0;
+
 void setup(void) {
 //  Serial.begin(115200);  
 
@@ -28,7 +34,14 @@ void setup(void) {
 
   tft.fillScreen(TFT_BLACK);
   tft.invertDisplay( true ); // Where i is true or false
-  
+
+  tft.setTextColor(TFT_WHITE);
+  int16_t w = tft.textWidth("[ACOS]");
+  tft.setCursor((SCREEN_WIDTH - w) / 2, 0);
+  tft.println("[ACOS]");
+  tft.print("> ");
+  cursor_x = tft.getCursorX();
+  cursor_y = tft.getCursorY();
 
   gpio_init(LEDPIN);
   gpio_set_dir(LEDPIN,GPIO_OUT);
@@ -58,31 +71,41 @@ void setup(void) {
 
     Serial.println("done!");
   }
-  
-  init_i2c_kbd();
 
+  init_i2c_kbd();
+  init_pwm();
 }
 
 void loop() {
-   // Binary inversion of colours
-  
-  tft.setTextColor(random(5000));
-  for (int x=0;x<(SCREEN_WIDTH);x+=8)
-   for (int y=0;y<SCREEN_HEIGHT;y+=8)
-    tft.drawChar('#',x,y);
+  int key = read_i2c_kbd();
+  if (key < 0) return;
 
-  int key=-1;
-  char strBuf[50];
-  while (key!=KEY_ENTER)
-  {
-    key = read_i2c_kbd();
-    sprintf(strBuf, "key  %c = %i",(char)key,key);
-   /* if (key!=-1)
-      Serial.println(strBuf);*/
-    //tft.drawChar((uint16_t)key,100,100);
-    tft.drawString(strBuf,100,100);
+  if (key >= 32 && key <= 126) {
+    if (input_length < (int)sizeof(input_buffer) - 1) {
+      char ch = (char)key;
+      input_buffer[input_length++] = ch;
+      tft.print(ch);
+      play_click();
+    }
+  } else if (key == KEY_BACKSPACE) {
+    if (input_length > 0) {
+      input_length--;
+      int16_t x = tft.getCursorX();
+      int16_t y = tft.getCursorY();
+      int16_t w = tft.textWidth(" ");
+      tft.setCursor(x - w, y);
+      tft.print(" ");
+      tft.setCursor(x - w, y);
+    }
+  } else if (key == KEY_ENTER) {
+    input_buffer[input_length] = '\0';
+    int16_t h = tft.fontHeight();
+    tft.fillRect(0, cursor_y - h, SCREEN_WIDTH, h, TFT_BLACK);
+    tft.setCursor(0, cursor_y);
+    tft.print("> ");
+    cursor_x = tft.getCursorX();
+    input_length = 0;
   }
-  
 }
 
 void printDirectory(File dir, int numTabs) {
