@@ -4,6 +4,7 @@
 #include <hardware/gpio.h>
 #include "i2ckbd.h"
 #include "pwm_sound.h"
+#include <hardware/watchdog.h>
 
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
@@ -118,7 +119,9 @@ void loop() {
   int key = read_i2c_kbd();
   if (key < 0) return;
 
-  if (key >= 32 && key <= 126) {
+  if (key == KEY_CTRL_ALT_DEL) {
+    watchdog_reboot(0, 0, 0);
+  } else if (key >= 32 && key <= 126) {
     if (at_telnet_prompt && (key < '0' || key > '9')) {
       return;
     }

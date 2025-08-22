@@ -46,6 +46,9 @@
 
 #define KEY_CAPS_LOCK   0xC1
 
+// Special combined key codes
+#define KEY_CTRL_ALT_DEL 0xF1
+
 #define I2C_KBD_MOD i2c1
 #define I2C_KBD_SDA 6   // 6
 #define I2C_KBD_SCL 7  // 7
