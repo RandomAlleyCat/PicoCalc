@@ -75,17 +75,42 @@ void setup(void) {
 void simulate_modem_dial() {
   tft.fillScreen(TFT_BLACK);
   tft.setCursor(0, 0);
+
   const char *dial = "ATDT5551212";
   for (const char *p = dial; *p; ++p) {
+    // Animate the modem command one character at a time
+    tft.setCursor(tft.getCursorX(), tft.getCursorY());
     tft.print(*p);
     if (*p >= '0' && *p <= '9') {
       play_dtmf_sequence(*p);
     }
     sleep_ms(150);
   }
-  tft.println();
+
+  // Animate a simple "Dialing..." progress indicator
+  for (int i = 0; i <= 3; ++i) {
+    tft.setCursor(0, 16);
+    tft.print("Dialing");
+    for (int j = 0; j < i; ++j) {
+      tft.print(".");
+    }
+    for (int j = i; j < 3; ++j) {
+      tft.print(" ");
+    }
+    sleep_ms(300);
+  }
+
+  tft.setCursor(0, 32);
+  tft.setTextColor(TFT_GREEN);
   tft.println("CONNECT 9600");
   play_modem_handshake();
+
+  // Flash the display to indicate the connection
+  tft.invertDisplay(true);
+  sleep_ms(100);
+  tft.invertDisplay(false);
+  tft.setTextColor(TFT_WHITE);
+
   sleep_ms(500);
   show_login_screen();
 }
