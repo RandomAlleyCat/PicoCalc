@@ -1,5 +1,6 @@
 #include "pwm_sound.h"
 #include <math.h>
+#include <stdlib.h>
 
 static uint slice_l;
 static uint slice_r;
@@ -59,6 +60,47 @@ void play_tone(uint freq_hz, uint duration_ms) {
     play_dual_tone(freq_hz, freq_hz, duration_ms);
 }
 
+static void play_noise(uint duration_ms) {
+    const uint sample_rate = 8000;
+    float clkdiv = (float)PWM_CLOCK_KHZ * 1000 / ((float)sample_rate * wrap_value);
+    pwm_set_clkdiv(slice_l, clkdiv);
+    pwm_set_enabled(slice_l, true);
+
+    uint total_samples = sample_rate * duration_ms / 1000;
+    for (uint i = 0; i < total_samples; ++i) {
+        float sample = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+        uint16_t level = (uint16_t)((sample + 1.0f) * (wrap_value / 2));
+        pwm_set_chan_level(slice_l, PWM_CHAN_A, level);
+        sleep_us(1000000 / sample_rate);
+    }
+
+    pwm_set_chan_level(slice_l, PWM_CHAN_A, 0);
+    pwm_set_enabled(slice_l, false);
+}
+
+static void play_freq_sweep(uint start_freq, uint end_freq, uint duration_ms) {
+    const uint sample_rate = 8000;
+    float clkdiv = (float)PWM_CLOCK_KHZ * 1000 / ((float)sample_rate * wrap_value);
+    pwm_set_clkdiv(slice_l, clkdiv);
+    pwm_set_enabled(slice_l, true);
+
+    uint total_samples = sample_rate * duration_ms / 1000;
+    float phase = 0.0f;
+    for (uint i = 0; i < total_samples; ++i) {
+        float t = (float)i / (float)total_samples;
+        float freq = start_freq + (end_freq - start_freq) * t;
+        float step = 2.0f * (float)M_PI * freq / sample_rate;
+        phase += step;
+        float sample = sinf(phase);
+        uint16_t level = (uint16_t)((sample + 1.0f) * (wrap_value / 2));
+        pwm_set_chan_level(slice_l, PWM_CHAN_A, level);
+        sleep_us(1000000 / sample_rate);
+    }
+
+    pwm_set_chan_level(slice_l, PWM_CHAN_A, 0);
+    pwm_set_enabled(slice_l, false);
+}
+
 void play_dtmf_sequence(const char *digits) {
     struct {
         char d;
@@ -88,13 +130,14 @@ void play_dtmf_sequence(const char *digits) {
 }
 
 void play_modem_handshake() {
-    play_tone(1100, 300);
-    play_tone(2100, 300);
-    sleep_ms(50);
-    play_tone(1300, 300);
-    play_tone(2300, 300);
-    sleep_ms(50);
-    play_tone(1500, 400);
-    play_tone(2500, 400);
+    play_noise(200); // line pickup noise
+    play_tone(1800, 250); // brief carrier
+    play_noise(80);
+    play_freq_sweep(1500, 2100, 300);
+    play_noise(80);
+    play_freq_sweep(2100, 1200, 300);
+    play_noise(100);
+    play_freq_sweep(1200, 2400, 400);
+    play_noise(150);
 }
 
