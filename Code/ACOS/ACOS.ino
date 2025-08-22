@@ -29,6 +29,7 @@ static int input_length = 0;
 
 void simulate_modem_dial();
 void show_login_screen();
+void handle_command(const char *line);
 
 void setup(void) {
 //  Serial.begin(115200);  
@@ -126,6 +127,13 @@ void show_login_screen() {
   input_length = 0;
 }
 
+void handle_command(const char *line) {
+  // Placeholder for future command routing or screen switching.
+  tft.print("Login: ");
+  cursor_x = tft.getCursorX();
+  cursor_y = tft.getCursorY();
+}
+
 void loop() {
   int key = read_i2c_kbd();
   if (key < 0) return;
@@ -150,9 +158,7 @@ void loop() {
   } else if (key == KEY_ENTER) {
     input_buffer[input_length] = '\0';
     tft.println();
-    tft.print("Login: ");
-    cursor_x = tft.getCursorX();
-    cursor_y = tft.getCursorY();
+    handle_command(input_buffer);
     input_length = 0;
   }
 }
