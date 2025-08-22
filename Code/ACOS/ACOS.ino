@@ -27,21 +27,16 @@ static int cursor_y = 0;
 static char input_buffer[64];
 static int input_length = 0;
 
+void simulate_modem_dial();
+void show_login_screen();
+
 void setup(void) {
 //  Serial.begin(115200);  
 
   tft.init();
 
-  tft.fillScreen(TFT_BLACK);
   tft.invertDisplay( true ); // Where i is true or false
-
   tft.setTextColor(TFT_WHITE);
-  int16_t w = tft.textWidth("[ACOS]");
-  tft.setCursor((SCREEN_WIDTH - w) / 2, 0);
-  tft.println("[ACOS]");
-  tft.print("> ");
-  cursor_x = tft.getCursorX();
-  cursor_y = tft.getCursorY();
 
   gpio_init(LEDPIN);
   gpio_set_dir(LEDPIN,GPIO_OUT);
@@ -74,6 +69,36 @@ void setup(void) {
 
   init_i2c_kbd();
   init_pwm();
+  simulate_modem_dial();
+}
+
+void simulate_modem_dial() {
+  tft.fillScreen(TFT_BLACK);
+  tft.setCursor(0, 0);
+  const char *dial = "ATDT5551212";
+  for (const char *p = dial; *p; ++p) {
+    tft.print(*p);
+    if (*p >= '0' && *p <= '9') {
+      play_dtmf_sequence(*p);
+    }
+    sleep_ms(150);
+  }
+  tft.println();
+  tft.println("CONNECT 9600");
+  play_modem_handshake();
+  sleep_ms(500);
+  show_login_screen();
+}
+
+void show_login_screen() {
+  tft.fillScreen(TFT_BLACK);
+  tft.setCursor(0, 0);
+  tft.println("=== ACOS BBS ===");
+  tft.println();
+  tft.print("Login: ");
+  cursor_x = tft.getCursorX();
+  cursor_y = tft.getCursorY();
+  input_length = 0;
 }
 
 void loop() {
