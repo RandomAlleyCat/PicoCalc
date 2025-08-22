@@ -29,10 +29,12 @@ void play_click() {
     play_tone(1000, 10);
 }
 
-void play_tone(uint freq_hz, uint duration_ms) {
-    float clkdiv = (float)PWM_CLOCK_KHZ * 1000 / ((float)freq_hz * wrap_value);
-    pwm_set_clkdiv(slice_l, clkdiv);
-    pwm_set_clkdiv(slice_r, clkdiv);
+void play_dual_tone(uint freq1, uint freq2, uint duration_ms) {
+    float clkdiv_l = (float)PWM_CLOCK_KHZ * 1000 / ((float)freq1 * wrap_value);
+    float clkdiv_r = (float)PWM_CLOCK_KHZ * 1000 / ((float)freq2 * wrap_value);
+
+    pwm_set_clkdiv(slice_l, clkdiv_l);
+    pwm_set_clkdiv(slice_r, clkdiv_r);
     pwm_set_enabled(slice_l, true);
     pwm_set_enabled(slice_r, true);
     pwm_set_chan_level(slice_l, PWM_CHAN_A, wrap_value / 2);
@@ -42,6 +44,10 @@ void play_tone(uint freq_hz, uint duration_ms) {
     pwm_set_chan_level(slice_r, PWM_CHAN_B, 0);
     pwm_set_enabled(slice_l, false);
     pwm_set_enabled(slice_r, false);
+}
+
+void play_tone(uint freq_hz, uint duration_ms) {
+    play_dual_tone(freq_hz, freq_hz, duration_ms);
 }
 
 void play_dtmf_sequence(const char *digits) {
@@ -60,8 +66,7 @@ void play_dtmf_sequence(const char *digits) {
         bool found = false;
         for (size_t i = 0; i < sizeof(tones)/sizeof(tones[0]); ++i) {
             if (tones[i].d == *p) {
-                play_tone(tones[i].f1, 60);
-                play_tone(tones[i].f2, 60);
+                play_dual_tone(tones[i].f1, tones[i].f2, 60);
                 sleep_ms(40);
                 found = true;
                 break;
