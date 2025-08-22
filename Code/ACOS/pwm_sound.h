@@ -10,6 +10,7 @@
 #define AUDIO_PIN_L 26
 #define AUDIO_PIN_R 27
 
-void init_pwm(irq_handler_t);
+void init_pwm();
+void play_click();
 
 #endif //PWM_SOUND_H
