@@ -19,8 +19,9 @@ static int cursor_x = 0;
 static int cursor_y = 0;
 static char input_buffer[64];
 static int input_length = 0;
+static bool at_telnet_prompt = true;
 
-void simulate_modem_dial();
+void simulate_modem_dial(const char *number);
 void show_login_screen();
 void handle_command(const char *line);
 
@@ -49,14 +50,17 @@ void setup(void) {
   input_length = 0;
 }
 
-void simulate_modem_dial() {
+void simulate_modem_dial(const char *number) {
   tft.fillScreen(TFT_BLACK);
   tft.setCursor(0, 0);
 
-  const char *dial = "ATDT5551212";
-  for (const char *p = dial; *p; ++p) {
-    // Animate the modem command one character at a time
-    tft.setCursor(tft.getCursorX(), tft.getCursorY());
+  const char *prefix = "ATDT";
+  for (const char *p = prefix; *p; ++p) {
+    tft.print(*p);
+    sleep_ms(150);
+  }
+
+  for (const char *p = number; *p; ++p) {
     tft.print(*p);
     if (*p >= '0' && *p <= '9') {
       char digit[2] = {*p, '\0'};
@@ -90,7 +94,6 @@ void simulate_modem_dial() {
   tft.setTextColor(TFT_WHITE);
 
   sleep_ms(500);
-  show_login_screen();
 }
 
 void show_login_screen() {
@@ -116,6 +119,9 @@ void loop() {
   if (key < 0) return;
 
   if (key >= 32 && key <= 126) {
+    if (at_telnet_prompt && (key < '0' || key > '9')) {
+      return;
+    }
     if (input_length < (int)sizeof(input_buffer) - 1) {
       char ch = (char)key;
       input_buffer[input_length++] = ch;
@@ -135,7 +141,13 @@ void loop() {
   } else if (key == KEY_ENTER) {
     input_buffer[input_length] = '\0';
     tft.println();
-    handle_command(input_buffer);
+    if (at_telnet_prompt) {
+      simulate_modem_dial(input_buffer);
+      show_login_screen();
+      at_telnet_prompt = false;
+    } else {
+      handle_command(input_buffer);
+    }
     input_length = 0;
   }
 }
