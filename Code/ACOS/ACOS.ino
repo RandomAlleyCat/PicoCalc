@@ -110,25 +110,24 @@ void loop() {
       char ch = (char)key;
       input_buffer[input_length++] = ch;
       tft.print(ch);
+      cursor_x = tft.getCursorX();
       play_click();
     }
   } else if (key == KEY_BACKSPACE) {
     if (input_length > 0) {
       input_length--;
-      int16_t x = tft.getCursorX();
-      int16_t y = tft.getCursorY();
       int16_t w = tft.textWidth(" ");
-      tft.setCursor(x - w, y);
+      cursor_x -= w;
+      tft.setCursor(cursor_x, cursor_y);
       tft.print(" ");
-      tft.setCursor(x - w, y);
+      tft.setCursor(cursor_x, cursor_y);
     }
   } else if (key == KEY_ENTER) {
     input_buffer[input_length] = '\0';
-    int16_t h = tft.fontHeight();
-    tft.fillRect(0, cursor_y - h, SCREEN_WIDTH, h, TFT_BLACK);
-    tft.setCursor(0, cursor_y);
-    tft.print("> ");
+    tft.println();
+    tft.print("Login: ");
     cursor_x = tft.getCursorX();
+    cursor_y = tft.getCursorY();
     input_length = 0;
   }
 }
