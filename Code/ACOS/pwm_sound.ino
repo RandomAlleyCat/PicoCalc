@@ -1,4 +1,5 @@
 #include "pwm_sound.h"
+#include <math.h>
 
 static uint slice_l;
 static uint slice_r;
@@ -30,20 +31,28 @@ void play_click() {
 }
 
 void play_dual_tone(uint freq1, uint freq2, uint duration_ms) {
-    float clkdiv_l = (float)PWM_CLOCK_KHZ * 1000 / ((float)freq1 * wrap_value);
-    float clkdiv_r = (float)PWM_CLOCK_KHZ * 1000 / ((float)freq2 * wrap_value);
-
-    pwm_set_clkdiv(slice_l, clkdiv_l);
-    pwm_set_clkdiv(slice_r, clkdiv_r);
+    const uint sample_rate = 8000;
+    float clkdiv = (float)PWM_CLOCK_KHZ * 1000 / ((float)sample_rate * wrap_value);
+    pwm_set_clkdiv(slice_l, clkdiv);
     pwm_set_enabled(slice_l, true);
-    pwm_set_enabled(slice_r, true);
-    pwm_set_chan_level(slice_l, PWM_CHAN_A, wrap_value / 2);
-    pwm_set_chan_level(slice_r, PWM_CHAN_B, wrap_value / 2);
-    sleep_ms(duration_ms);
+
+    float phase1 = 0.0f;
+    float phase2 = 0.0f;
+    float step1 = 2.0f * (float)M_PI * freq1 / sample_rate;
+    float step2 = 2.0f * (float)M_PI * freq2 / sample_rate;
+    uint total_samples = sample_rate * duration_ms / 1000;
+
+    for (uint i = 0; i < total_samples; ++i) {
+        float sample = (sinf(phase1) + sinf(phase2)) * 0.5f; // mix and scale
+        uint16_t level = (uint16_t)((sample + 1.0f) * (wrap_value / 2));
+        pwm_set_chan_level(slice_l, PWM_CHAN_A, level);
+        sleep_us(1000000 / sample_rate);
+        phase1 += step1;
+        phase2 += step2;
+    }
+
     pwm_set_chan_level(slice_l, PWM_CHAN_A, 0);
-    pwm_set_chan_level(slice_r, PWM_CHAN_B, 0);
     pwm_set_enabled(slice_l, false);
-    pwm_set_enabled(slice_r, false);
 }
 
 void play_tone(uint freq_hz, uint duration_ms) {
@@ -63,18 +72,18 @@ void play_dtmf_sequence(const char *digits) {
     };
 
     for (const char *p = digits; p && *p; ++p) {
-        bool found = false;
-        for (size_t i = 0; i < sizeof(tones)/sizeof(tones[0]); ++i) {
+        bool played = false;
+        for (size_t i = 0; i < sizeof(tones) / sizeof(tones[0]); ++i) {
             if (tones[i].d == *p) {
                 play_dual_tone(tones[i].f1, tones[i].f2, 60);
-                sleep_ms(40);
-                found = true;
+                played = true;
                 break;
             }
         }
-        if (!found) {
+        if (!played) {
             play_click();
         }
+        sleep_ms(40);
     }
 }
 
